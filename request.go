@@ -18,27 +18,18 @@ type Error struct {
 
 }
 
-func (g Get) Do() (Response, bool, Error) {
-    ok := true
+func (g Get) Do() (Response, *Error) {
     response := Response{}
 
     res, err := http.Get(g.Uri)
 
     if err != nil {
-        ok = false
         // TODO: Generate the right error
     } else {
-        body, e := ioutil.ReadAll(res.Body)
-
-        if e != nil {
-            ok = false
-
-            // TODO: Generate the right error
-        } else {
-            response.Body = string(body)
-            response.StatusCode = res.StatusCode
-        }
+        body, _ := ioutil.ReadAll(res.Body)
+        response.Body = string(body)
+        response.StatusCode = res.StatusCode
     }
 
-    return response, ok, Error{}
+    return response, nil
 }
