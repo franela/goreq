@@ -7,6 +7,7 @@ import (
     "net/http/httptest"
     "net/http"
     "fmt"
+    "io/ioutil"
 )
 
 func TestRequest(t *testing.T) {
@@ -25,6 +26,12 @@ func TestRequest(t *testing.T) {
                         w.WriteHeader(200)
                         fmt.Fprint(w, "bar")
                     }
+                    if r.Method == "POST" && r.URL.Path == "/" {
+                        body, _ := ioutil.ReadAll(r.Body)
+                        w.Header().Add("Location", ts.URL + "/" + string(body))
+                        w.WriteHeader(201)
+                        fmt.Fprint(w, "bar")
+                    }
                 }))
             })
 
@@ -40,7 +47,17 @@ func TestRequest(t *testing.T) {
                 Expect(res.StatusCode).Should(Equal(200))
             })
 
-            g.It("Should do a POST")
+            g.Describe("Should be able to POST", func() {
+                g.It("a string", func() {
+                    res, err := Post{ Uri: ts.URL, Body: "foo" }.Do()
+
+                    Expect(err).Should(BeNil())
+                    Expect(res.Body).Should(Equal("bar"))
+                    Expect(res.StatusCode).Should(Equal(201))
+                    Expect(res.Header.Get("Location")).Should(Equal(ts.URL + "/foo"))
+                })
+            })
+
             g.It("Should do a PUT")
             g.It("Should do a DELETE")
             g.It("Should do a OPTIONS")
