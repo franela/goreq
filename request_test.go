@@ -33,10 +33,10 @@ func TestRequest(t *testing.T) {
             })
 
             g.It("Should do a GET", func() {
-                res, body, err := Get{ Uri: ts.URL + "/foo" }.Do()
+                res, err := Get{ Uri: ts.URL + "/foo" }.Do()
 
                 Expect(err).Should(BeNil())
-                Expect(body).Should(Equal("bar"))
+                Expect(res.Body).Should(Equal("bar"))
                 Expect(res.StatusCode).Should(Equal(200))
             })
 

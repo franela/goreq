@@ -11,24 +11,25 @@ type Get struct {
 
 type Response struct {
     StatusCode int
+    Body string
 }
 
 type Error struct {
 
 }
 
-func (g Get) Do() (Response, string, *Error) {
+func (g Get) Do() (Response, *Error) {
     response := Response{}
-    var body []byte
 
     res, err := http.Get(g.Uri)
 
     if err != nil {
         // TODO: Generate the right error
     } else {
-        body, _ = ioutil.ReadAll(res.Body)
+        body, _ := ioutil.ReadAll(res.Body)
+        response.Body = string(body)
         response.StatusCode = res.StatusCode
     }
 
-    return response, string(body), nil
+    return response, nil
 }
