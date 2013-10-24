@@ -8,6 +8,7 @@ import (
     "net/http"
     "fmt"
     "io/ioutil"
+    "strings"
 )
 
 func TestRequest(t *testing.T) {
@@ -50,6 +51,15 @@ func TestRequest(t *testing.T) {
             g.Describe("Should be able to POST", func() {
                 g.It("a string", func() {
                     res, err := Post{ Uri: ts.URL, Body: "foo" }.Do()
+
+                    Expect(err).Should(BeNil())
+                    Expect(res.Body).Should(Equal("bar"))
+                    Expect(res.StatusCode).Should(Equal(201))
+                    Expect(res.Header.Get("Location")).Should(Equal(ts.URL + "/foo"))
+                })
+
+                g.It("a Reader", func() {
+                    res, err := Post{ Uri: ts.URL, Body: strings.NewReader("foo") }.Do()
 
                     Expect(err).Should(BeNil())
                     Expect(res.Body).Should(Equal("bar"))

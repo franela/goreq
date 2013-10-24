@@ -4,6 +4,7 @@ import (
     "io/ioutil"
     "net/http"
     "strings"
+    "io"
 )
 
 type Get struct {
@@ -13,7 +14,7 @@ type Get struct {
 
 type Post struct {
     Uri string
-    Body string
+    Body interface{}
 }
 
 type Response struct {
@@ -45,7 +46,13 @@ func (r Get) Do() (Response, *Error) {
 func (r Post) Do() (Response, *Error) {
     response := Response{}
 
-    res, err := http.Post(r.Uri, "text/plain", strings.NewReader(r.Body))
+    var body io.Reader
+    if sb, ok := r.Body.(string); ok {
+        body = strings.NewReader(sb)
+    } else if rb, ok := r.Body.(io.Reader); ok {
+        body = rb
+    }
+    res, err := http.Post(r.Uri, "text/plain", body)
 
     if err != nil {
         // TODO: Generate the right error
