@@ -5,6 +5,8 @@ import (
     "net/http"
     "strings"
     "io"
+    "encoding/json"
+    "bytes"
 )
 
 type Get struct {
@@ -47,10 +49,20 @@ func (r Post) Do() (Response, *Error) {
     response := Response{}
 
     var body io.Reader
+
     if sb, ok := r.Body.(string); ok {
+        // treat is as text
         body = strings.NewReader(sb)
     } else if rb, ok := r.Body.(io.Reader); ok {
+        // treat is as text
         body = rb
+    } else {
+        // try to jsonify it
+        if j, err := json.Marshal(r.Body); err == nil {
+            body = bytes.NewReader(j)
+        } else {
+            // TODO: handle error. don't know what to do with this.
+        }
     }
     res, err := http.Post(r.Uri, "text/plain", body)
 
