@@ -25,6 +25,11 @@ type Put struct {
     Body interface{}
 }
 
+type Delete struct {
+    Uri string
+    Body interface{}
+}
+
 type Response struct {
     StatusCode int
     Body string
@@ -83,4 +88,8 @@ func (r Put) Do() (Response, *Error) {
 
 func (r Post) Do() (Response, *Error) {
     return makeRequest("POST", r.Uri, r.Body), nil
+}
+
+func (r Delete) Do() (Response, *Error) {
+    return makeRequest("DELETE", r.Uri, r.Body), nil
 }
