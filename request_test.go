@@ -7,6 +7,8 @@ import (
     "net/http/httptest"
     "net/http"
     "fmt"
+    "io/ioutil"
+    "strings"
 )
 
 func TestRequest(t *testing.T) {
@@ -25,6 +27,12 @@ func TestRequest(t *testing.T) {
                         w.WriteHeader(200)
                         fmt.Fprint(w, "bar")
                     }
+                    if r.Method == "POST" && r.URL.Path == "/" {
+                        body, _ := ioutil.ReadAll(r.Body)
+                        w.Header().Add("Location", ts.URL + "/123")
+                        w.WriteHeader(201)
+                        fmt.Fprint(w, string(body))
+                    }
                 }))
             })
 
@@ -40,7 +48,36 @@ func TestRequest(t *testing.T) {
                 Expect(res.StatusCode).Should(Equal(200))
             })
 
-            g.It("Should do a POST")
+            g.Describe("POST", func() {
+                g.It("Should send a string", func() {
+                    res, err := Post{ Uri: ts.URL, Body: "foo" }.Do()
+
+                    Expect(err).Should(BeNil())
+                    Expect(res.Body).Should(Equal("foo"))
+                    Expect(res.StatusCode).Should(Equal(201))
+                    Expect(res.Header.Get("Location")).Should(Equal(ts.URL + "/123"))
+                })
+
+                g.It("Should send a Reader", func() {
+                    res, err := Post{ Uri: ts.URL, Body: strings.NewReader("foo") }.Do()
+
+                    Expect(err).Should(BeNil())
+                    Expect(res.Body).Should(Equal("foo"))
+                    Expect(res.StatusCode).Should(Equal(201))
+                    Expect(res.Header.Get("Location")).Should(Equal(ts.URL + "/123"))
+                })
+
+                g.It("Send any object that is json encodable", func() {
+                    obj := map[string]string {"foo": "bar"}
+                    res, err := Post{ Uri: ts.URL, Body: obj}.Do()
+
+                    Expect(err).Should(BeNil())
+                    Expect(res.Body).Should(Equal(`{"foo":"bar"}`))
+                    Expect(res.StatusCode).Should(Equal(201))
+                    Expect(res.Header.Get("Location")).Should(Equal(ts.URL + "/123"))
+                })
+            })
+
             g.It("Should do a PUT")
             g.It("Should do a DELETE")
             g.It("Should do a OPTIONS")
