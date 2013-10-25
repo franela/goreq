@@ -23,7 +23,7 @@ func TestRequest(t *testing.T) {
 
             g.Before(func() {
                 ts = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-                    if r.Method == "GET" && r.URL.Path == "/foo" {
+                    if (r.Method == "GET" || r.Method == "OPTIONS" || r.Method == "TRACE" || r.Method == "PATCH" || r.Method == "FOOBAR") && r.URL.Path == "/foo" {
                         w.WriteHeader(200)
                         fmt.Fprint(w, "bar")
                     }
@@ -101,10 +101,37 @@ func TestRequest(t *testing.T) {
                 Expect(res.StatusCode).Should(Equal(204))
             })
 
-            g.It("Should do a OPTIONS")
-            g.It("Should do a PATCH")
-            g.It("Should do a TRACE")
-            g.It("Should do a custom method")
+            g.It("Should do a OPTIONS", func() {
+                res, err := Options{ Uri: ts.URL + "/foo" }.Do()
+
+                Expect(err).Should(BeNil())
+                Expect(res.Body).Should(Equal("bar"))
+                Expect(res.StatusCode).Should(Equal(200))
+            })
+
+            g.It("Should do a PATCH", func() {
+                res, err := Patch{ Uri: ts.URL + "/foo" }.Do()
+
+                Expect(err).Should(BeNil())
+                Expect(res.Body).Should(Equal("bar"))
+                Expect(res.StatusCode).Should(Equal(200))
+            })
+
+            g.It("Should do a TRACE", func() {
+                res, err := Trace{ Uri: ts.URL + "/foo" }.Do()
+
+                Expect(err).Should(BeNil())
+                Expect(res.Body).Should(Equal("bar"))
+                Expect(res.StatusCode).Should(Equal(200))
+            })
+
+            g.It("Should do a custom method", func() {
+                res, err := Request{ Method: "FOOBAR", Uri: ts.URL + "/foo" }.Do()
+
+                Expect(err).Should(BeNil())
+                Expect(res.Body).Should(Equal("bar"))
+                Expect(res.StatusCode).Should(Equal(200))
+            })
         })
 
         g.Describe("Timeouts", func() {

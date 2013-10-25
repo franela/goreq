@@ -30,6 +30,27 @@ type Delete struct {
     Body interface{}
 }
 
+type Options struct {
+    Uri string
+    Body interface{}
+}
+
+type Patch struct {
+    Uri string
+    Body interface{}
+}
+
+type Trace struct {
+    Uri string
+    Body interface{}
+}
+
+type Request struct {
+    Method string
+    Uri string
+    Body interface{}
+}
+
 type Response struct {
     StatusCode int
     Body string
@@ -92,4 +113,20 @@ func (r Post) Do() (Response, *Error) {
 
 func (r Delete) Do() (Response, *Error) {
     return makeRequest("DELETE", r.Uri, r.Body), nil
+}
+
+func (r Options) Do() (Response, *Error) {
+    return makeRequest("OPTIONS", r.Uri, r.Body), nil
+}
+
+func (r Trace) Do() (Response, *Error) {
+    return makeRequest("TRACE", r.Uri, r.Body), nil
+}
+
+func (r Patch) Do() (Response, *Error) {
+    return makeRequest("PATCH", r.Uri, r.Body), nil
+}
+
+func (r Request) Do() (Response, *Error) {
+    return makeRequest(r.Method, r.Uri, r.Body), nil
 }
