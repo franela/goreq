@@ -38,6 +38,9 @@ func TestRequest(t *testing.T) {
                         w.WriteHeader(200)
                         fmt.Fprint(w, string(body))
                     }
+                    if r.Method == "DELETE" && r.URL.Path == "/foo/123" {
+                        w.WriteHeader(204)
+                    }
                 }))
             })
 
@@ -90,7 +93,14 @@ func TestRequest(t *testing.T) {
                 Expect(res.Body).Should(Equal("foo"))
                 Expect(res.StatusCode).Should(Equal(200))
             })
-            g.It("Should do a DELETE")
+
+            g.It("Should do a DELETE", func() {
+                res, err := Delete{ Uri: ts.URL + "/foo/123" }.Do()
+
+                Expect(err).Should(BeNil())
+                Expect(res.StatusCode).Should(Equal(204))
+            })
+
             g.It("Should do a OPTIONS")
             g.It("Should do a PATCH")
             g.It("Should do a TRACE")
