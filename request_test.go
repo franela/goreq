@@ -48,8 +48,8 @@ func TestRequest(t *testing.T) {
                 Expect(res.StatusCode).Should(Equal(200))
             })
 
-            g.Describe("Should be able to POST", func() {
-                g.It("a string", func() {
+            g.Describe("POST", func() {
+                g.It("Should send a string", func() {
                     res, err := Post{ Uri: ts.URL, Body: "foo" }.Do()
 
                     Expect(err).Should(BeNil())
@@ -58,7 +58,7 @@ func TestRequest(t *testing.T) {
                     Expect(res.Header.Get("Location")).Should(Equal(ts.URL + "/123"))
                 })
 
-                g.It("a Reader", func() {
+                g.It("Should send a Reader", func() {
                     res, err := Post{ Uri: ts.URL, Body: strings.NewReader("foo") }.Do()
 
                     Expect(err).Should(BeNil())
@@ -67,7 +67,7 @@ func TestRequest(t *testing.T) {
                     Expect(res.Header.Get("Location")).Should(Equal(ts.URL + "/123"))
                 })
 
-                g.It("any other json valid structure", func() {
+                g.It("Send any object that is json encodable", func() {
                     obj := map[string]string {"foo": "bar"}
                     res, err := Post{ Uri: ts.URL, Body: obj}.Do()
 
