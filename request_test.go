@@ -33,6 +33,11 @@ func TestRequest(t *testing.T) {
                         w.WriteHeader(201)
                         fmt.Fprint(w, string(body))
                     }
+                    if r.Method == "PUT" && r.URL.Path == "/foo/123" {
+                        body, _ := ioutil.ReadAll(r.Body)
+                        w.WriteHeader(200)
+                        fmt.Fprint(w, string(body))
+                    }
                 }))
             })
 
@@ -78,7 +83,13 @@ func TestRequest(t *testing.T) {
                 })
             })
 
-            g.It("Should do a PUT")
+            g.It("Should do a PUT", func() {
+                res, err := Put{ Uri: ts.URL + "/foo/123", Body: "foo" }.Do()
+
+                Expect(err).Should(BeNil())
+                Expect(res.Body).Should(Equal("foo"))
+                Expect(res.StatusCode).Should(Equal(200))
+            })
             g.It("Should do a DELETE")
             g.It("Should do a OPTIONS")
             g.It("Should do a PATCH")
