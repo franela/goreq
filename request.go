@@ -9,42 +9,6 @@ import (
     "bytes"
 )
 
-type Get struct {
-    Uri string
-    Body interface{}
-}
-
-
-type Post struct {
-    Uri string
-    Body interface{}
-}
-
-type Put struct {
-    Uri string
-    Body interface{}
-}
-
-type Delete struct {
-    Uri string
-    Body interface{}
-}
-
-type Options struct {
-    Uri string
-    Body interface{}
-}
-
-type Patch struct {
-    Uri string
-    Body interface{}
-}
-
-type Trace struct {
-    Uri string
-    Body interface{}
-}
-
 type Request struct {
     Method string
     Uri string
@@ -59,16 +23,6 @@ type Response struct {
 
 type Error struct {
 
-}
-
-func makeRequest(method string, uri string, body interface{}) (Response) {
-    client := &http.Client{}
-    b := prepareRequestBody(body)
-    req, _ := http.NewRequest(method, uri, b)
-    // TODO: handler error
-    res, _ := client.Do(req)
-    // TODO: handler error
-    return newResponse(res)
 }
 
 func prepareRequestBody(b interface{}) (io.Reader) {
@@ -98,35 +52,12 @@ func newResponse(res *http.Response) (Response) {
     return Response{ StatusCode: res.StatusCode, Header: res.Header, Body: string(body) }
 }
 
-func (r Get) Do() (Response, *Error) {
-    return makeRequest("GET", r.Uri, r.Body), nil
-}
-
-
-func (r Put) Do() (Response, *Error) {
-    return makeRequest("PUT", r.Uri, r.Body), nil
-}
-
-func (r Post) Do() (Response, *Error) {
-    return makeRequest("POST", r.Uri, r.Body), nil
-}
-
-func (r Delete) Do() (Response, *Error) {
-    return makeRequest("DELETE", r.Uri, r.Body), nil
-}
-
-func (r Options) Do() (Response, *Error) {
-    return makeRequest("OPTIONS", r.Uri, r.Body), nil
-}
-
-func (r Trace) Do() (Response, *Error) {
-    return makeRequest("TRACE", r.Uri, r.Body), nil
-}
-
-func (r Patch) Do() (Response, *Error) {
-    return makeRequest("PATCH", r.Uri, r.Body), nil
-}
-
 func (r Request) Do() (Response, *Error) {
-    return makeRequest(r.Method, r.Uri, r.Body), nil
+    client := &http.Client{}
+    b := prepareRequestBody(r.Body)
+    req, _ := http.NewRequest(r.Method, r.Uri, b)
+    // TODO: handler error
+    res, _ := client.Do(req)
+    // TODO: handler error
+    return newResponse(res), nil
 }

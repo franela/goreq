@@ -49,7 +49,7 @@ func TestRequest(t *testing.T) {
             })
 
             g.It("Should do a GET", func() {
-                res, err := Get{ Uri: ts.URL + "/foo" }.Do()
+                res, err := Request{ Uri: ts.URL + "/foo" }.Do()
 
                 Expect(err).Should(BeNil())
                 Expect(res.Body).Should(Equal("bar"))
@@ -58,7 +58,7 @@ func TestRequest(t *testing.T) {
 
             g.Describe("POST", func() {
                 g.It("Should send a string", func() {
-                    res, err := Post{ Uri: ts.URL, Body: "foo" }.Do()
+                    res, err := Request{ Method: "POST", Uri: ts.URL, Body: "foo" }.Do()
 
                     Expect(err).Should(BeNil())
                     Expect(res.Body).Should(Equal("foo"))
@@ -67,7 +67,7 @@ func TestRequest(t *testing.T) {
                 })
 
                 g.It("Should send a Reader", func() {
-                    res, err := Post{ Uri: ts.URL, Body: strings.NewReader("foo") }.Do()
+                    res, err := Request{ Method: "POST", Uri: ts.URL, Body: strings.NewReader("foo") }.Do()
 
                     Expect(err).Should(BeNil())
                     Expect(res.Body).Should(Equal("foo"))
@@ -77,7 +77,7 @@ func TestRequest(t *testing.T) {
 
                 g.It("Send any object that is json encodable", func() {
                     obj := map[string]string {"foo": "bar"}
-                    res, err := Post{ Uri: ts.URL, Body: obj}.Do()
+                    res, err := Request{ Method: "POST", Uri: ts.URL, Body: obj}.Do()
 
                     Expect(err).Should(BeNil())
                     Expect(res.Body).Should(Equal(`{"foo":"bar"}`))
@@ -87,7 +87,7 @@ func TestRequest(t *testing.T) {
             })
 
             g.It("Should do a PUT", func() {
-                res, err := Put{ Uri: ts.URL + "/foo/123", Body: "foo" }.Do()
+                res, err := Request{ Method: "PUT", Uri: ts.URL + "/foo/123", Body: "foo" }.Do()
 
                 Expect(err).Should(BeNil())
                 Expect(res.Body).Should(Equal("foo"))
@@ -95,14 +95,14 @@ func TestRequest(t *testing.T) {
             })
 
             g.It("Should do a DELETE", func() {
-                res, err := Delete{ Uri: ts.URL + "/foo/123" }.Do()
+                res, err := Request{ Method: "DELETE", Uri: ts.URL + "/foo/123" }.Do()
 
                 Expect(err).Should(BeNil())
                 Expect(res.StatusCode).Should(Equal(204))
             })
 
             g.It("Should do a OPTIONS", func() {
-                res, err := Options{ Uri: ts.URL + "/foo" }.Do()
+                res, err := Request{ Method: "OPTIONS", Uri: ts.URL + "/foo" }.Do()
 
                 Expect(err).Should(BeNil())
                 Expect(res.Body).Should(Equal("bar"))
@@ -110,7 +110,7 @@ func TestRequest(t *testing.T) {
             })
 
             g.It("Should do a PATCH", func() {
-                res, err := Patch{ Uri: ts.URL + "/foo" }.Do()
+                res, err := Request{ Method: "PATCH", Uri: ts.URL + "/foo" }.Do()
 
                 Expect(err).Should(BeNil())
                 Expect(res.Body).Should(Equal("bar"))
@@ -118,7 +118,7 @@ func TestRequest(t *testing.T) {
             })
 
             g.It("Should do a TRACE", func() {
-                res, err := Trace{ Uri: ts.URL + "/foo" }.Do()
+                res, err := Request{ Method: "TRACE", Uri: ts.URL + "/foo" }.Do()
 
                 Expect(err).Should(BeNil())
                 Expect(res.Body).Should(Equal("bar"))
