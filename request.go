@@ -11,10 +11,16 @@ import (
 
 type Get struct {
     Uri string
+    Body interface{}
 }
 
 
 type Post struct {
+    Uri string
+    Body interface{}
+}
+
+type Put struct {
     Uri string
     Body interface{}
 }
@@ -29,51 +35,52 @@ type Error struct {
 
 }
 
-func (r Get) Do() (Response, *Error) {
-    response := Response{}
-
-    res, err := http.Get(r.Uri)
-
-    if err != nil {
-        // TODO: Generate the right error
-    } else {
-        body, _ := ioutil.ReadAll(res.Body)
-        response.Body = string(body)
-        response.StatusCode = res.StatusCode
-    }
-
-    return response, nil
+func makeRequest(method string, uri string, body interface{}) (Response) {
+    client := &http.Client{}
+    b := prepareRequestBody(body)
+    req, _ := http.NewRequest(method, uri, b)
+    // TODO: handler error
+    res, _ := client.Do(req)
+    // TODO: handler error
+    return newResponse(res)
 }
 
-func (r Post) Do() (Response, *Error) {
-    response := Response{}
-
+func prepareRequestBody(b interface{}) (io.Reader) {
     var body io.Reader
 
-    if sb, ok := r.Body.(string); ok {
+    if sb, ok := b.(string); ok {
         // treat is as text
         body = strings.NewReader(sb)
-    } else if rb, ok := r.Body.(io.Reader); ok {
+    } else if rb, ok := b.(io.Reader); ok {
         // treat is as text
         body = rb
     } else {
         // try to jsonify it
-        if j, err := json.Marshal(r.Body); err == nil {
+        if j, err := json.Marshal(b); err == nil {
             body = bytes.NewReader(j)
         } else {
             // TODO: handle error. don't know what to do with this.
         }
     }
-    res, err := http.Post(r.Uri, "text/plain", body)
 
-    if err != nil {
-        // TODO: Generate the right error
-    } else {
-        body, _ := ioutil.ReadAll(res.Body)
-        response.Body = string(body)
-        response.StatusCode = res.StatusCode
-        response.Header = res.Header
-    }
+   return body
+}
 
-    return response, nil
+func newResponse(res *http.Response) (Response) {
+    body, _ := ioutil.ReadAll(res.Body)
+    // TODO: handle error
+    return Response{ StatusCode: res.StatusCode, Header: res.Header, Body: string(body) }
+}
+
+func (r Get) Do() (Response, *Error) {
+    return makeRequest("GET", r.Uri, r.Body), nil
+}
+
+
+func (r Put) Do() (Response, *Error) {
+    return makeRequest("PUT", r.Uri, r.Body), nil
+}
+
+func (r Post) Do() (Response, *Error) {
+    return makeRequest("POST", r.Uri, r.Body), nil
 }
