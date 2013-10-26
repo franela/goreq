@@ -52,7 +52,7 @@ func TestRequest(t *testing.T) {
                 res, err := Request{ Uri: ts.URL + "/foo" }.Do()
 
                 Expect(err).Should(BeNil())
-                Expect(res.Body).Should(Equal("bar"))
+                Expect(res.Body.ToString()).Should(Equal("bar"))
                 Expect(res.StatusCode).Should(Equal(200))
             })
 
@@ -61,7 +61,7 @@ func TestRequest(t *testing.T) {
                     res, err := Request{ Method: "POST", Uri: ts.URL, Body: "foo" }.Do()
 
                     Expect(err).Should(BeNil())
-                    Expect(res.Body).Should(Equal("foo"))
+                    Expect(res.Body.ToString()).Should(Equal("foo"))
                     Expect(res.StatusCode).Should(Equal(201))
                     Expect(res.Header.Get("Location")).Should(Equal(ts.URL + "/123"))
                 })
@@ -70,7 +70,7 @@ func TestRequest(t *testing.T) {
                     res, err := Request{ Method: "POST", Uri: ts.URL, Body: strings.NewReader("foo") }.Do()
 
                     Expect(err).Should(BeNil())
-                    Expect(res.Body).Should(Equal("foo"))
+                    Expect(res.Body.ToString()).Should(Equal("foo"))
                     Expect(res.StatusCode).Should(Equal(201))
                     Expect(res.Header.Get("Location")).Should(Equal(ts.URL + "/123"))
                 })
@@ -80,7 +80,7 @@ func TestRequest(t *testing.T) {
                     res, err := Request{ Method: "POST", Uri: ts.URL, Body: obj}.Do()
 
                     Expect(err).Should(BeNil())
-                    Expect(res.Body).Should(Equal(`{"foo":"bar"}`))
+                    Expect(res.Body.ToString()).Should(Equal(`{"foo":"bar"}`))
                     Expect(res.StatusCode).Should(Equal(201))
                     Expect(res.Header.Get("Location")).Should(Equal(ts.URL + "/123"))
                 })
@@ -90,7 +90,7 @@ func TestRequest(t *testing.T) {
                 res, err := Request{ Method: "PUT", Uri: ts.URL + "/foo/123", Body: "foo" }.Do()
 
                 Expect(err).Should(BeNil())
-                Expect(res.Body).Should(Equal("foo"))
+                Expect(res.Body.ToString()).Should(Equal("foo"))
                 Expect(res.StatusCode).Should(Equal(200))
             })
 
@@ -105,7 +105,7 @@ func TestRequest(t *testing.T) {
                 res, err := Request{ Method: "OPTIONS", Uri: ts.URL + "/foo" }.Do()
 
                 Expect(err).Should(BeNil())
-                Expect(res.Body).Should(Equal("bar"))
+                Expect(res.Body.ToString()).Should(Equal("bar"))
                 Expect(res.StatusCode).Should(Equal(200))
             })
 
@@ -113,7 +113,7 @@ func TestRequest(t *testing.T) {
                 res, err := Request{ Method: "PATCH", Uri: ts.URL + "/foo" }.Do()
 
                 Expect(err).Should(BeNil())
-                Expect(res.Body).Should(Equal("bar"))
+                Expect(res.Body.ToString()).Should(Equal("bar"))
                 Expect(res.StatusCode).Should(Equal(200))
             })
 
@@ -121,7 +121,7 @@ func TestRequest(t *testing.T) {
                 res, err := Request{ Method: "TRACE", Uri: ts.URL + "/foo" }.Do()
 
                 Expect(err).Should(BeNil())
-                Expect(res.Body).Should(Equal("bar"))
+                Expect(res.Body.ToString()).Should(Equal("bar"))
                 Expect(res.StatusCode).Should(Equal(200))
             })
 
@@ -129,8 +129,33 @@ func TestRequest(t *testing.T) {
                 res, err := Request{ Method: "FOOBAR", Uri: ts.URL + "/foo" }.Do()
 
                 Expect(err).Should(BeNil())
-                Expect(res.Body).Should(Equal("bar"))
+                Expect(res.Body.ToString()).Should(Equal("bar"))
                 Expect(res.StatusCode).Should(Equal(200))
+            })
+
+            g.Describe("Responses", func() {
+                g.It("Should handle strings", func() {
+                    res, _ := Request{ Method: "POST", Uri: ts.URL, Body: "foo bar" }.Do()
+
+                    Expect(res.Body.ToString()).Should(Equal("foo bar"))
+                });
+
+                g.It("Should handle io.ReaderCloser", func() {
+                    res, _ := Request{ Method: "POST", Uri: ts.URL, Body: "foo bar" }.Do()
+
+                    body, _ := ioutil.ReadAll(res.Body)
+                    Expect(string(body)).Should(Equal("foo bar"))
+                });
+
+                g.It("Should handle parsing JSON", func() {
+                    res, _ := Request{ Method: "POST", Uri: ts.URL, Body: `{"foo": "bar"}` }.Do()
+
+                    var foobar map[string]string
+
+                    res.Body.FromJsonTo(&foobar)
+
+                    Expect(foobar).Should(Equal(map[string]string { "foo": "bar" }))
+                });
             })
         })
 

@@ -17,12 +17,31 @@ type Request struct {
 
 type Response struct {
     StatusCode int
-    Body string
+    Body Body
     Header http.Header
+}
+
+type Body struct {
+    io.ReadCloser
 }
 
 type Error struct {
 
+}
+
+
+func (b *Body) ToString() (string) {
+    body, _ := ioutil.ReadAll(b)
+    // TODO: handle error
+    return string(body)
+}
+
+func (b *Body) FromJsonTo(o interface{}) {
+    body, _ := ioutil.ReadAll(b)
+    // TODO: handle error
+
+    json.Unmarshal(body, o)
+    // TODO: handle error
 }
 
 func prepareRequestBody(b interface{}) (io.Reader) {
@@ -47,9 +66,7 @@ func prepareRequestBody(b interface{}) (io.Reader) {
 }
 
 func newResponse(res *http.Response) (Response) {
-    body, _ := ioutil.ReadAll(res.Body)
-    // TODO: handle error
-    return Response{ StatusCode: res.StatusCode, Header: res.Header, Body: string(body) }
+    return Response{ StatusCode: res.StatusCode, Header: res.Header, Body: Body{ res.Body } }
 }
 
 func (r Request) Do() (Response, *Error) {
