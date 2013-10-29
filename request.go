@@ -20,8 +20,12 @@ type Request struct {
 
 type Response struct {
     StatusCode int
-    Body string
+    Body Body
     Header http.Header
+}
+
+type Body struct {
+    io.ReadCloser
 }
 
 type Error struct {
@@ -33,6 +37,20 @@ func (e *Error) ConnectTimeout() (bool) {
 }
 func (e *Error) RequestTimeout() (bool) {
     return e.requestTimeout
+}
+
+func (b *Body) FromJsonTo(o interface{}) {
+    body, _ := ioutil.ReadAll(b)
+    // TODO: handle error
+
+    json.Unmarshal(body, o)
+    // TODO: handle error
+}
+
+func (b *Body) ToString() (string) {
+    body, _ := ioutil.ReadAll(b)
+    // TODO: handle error
+    return string(body)
 }
 
 func prepareRequestBody(b interface{}) (io.Reader) {
@@ -57,9 +75,8 @@ func prepareRequestBody(b interface{}) (io.Reader) {
 }
 
 func newResponse(res *http.Response) (*Response) {
-    body, _ := ioutil.ReadAll(res.Body)
     // TODO: handle error
-    return &Response{ StatusCode: res.StatusCode, Header: res.Header, Body: string(body) }
+    return &Response{ StatusCode: res.StatusCode, Header: res.Header, Body: Body{ res.Body } }
 }
 
 var dialer = &net.Dialer{ Timeout: 1000 * time.Millisecond }
@@ -74,7 +91,7 @@ func (r Request) Do() (*Response, *Error) {
     b := prepareRequestBody(r.Body)
     req, _ := http.NewRequest(r.Method, r.Uri, b)
     // TODO: handler error
-    requestTimeout := false
+	requestTimeout := false
     var timer *time.Timer
     if r.Timeout > 0 {
         timer = time.AfterFunc(r.Timeout, func() {
