@@ -42,7 +42,11 @@ type Item struct {
 
 item := Item{ Id: 1111, Name: "foobar" }
 
-res, err := goreq.Request{ Method: "POST", Uri: "http://www.google.com", Body: item }.Do()
+res, err := goreq.Request{ 
+    Method: "POST", 
+    Uri: "http://www.google.com", 
+    Body: item,
+}.Do()
 ```
 
 ## Specifiying request headers
@@ -60,7 +64,10 @@ goreq.SetConnectionTimeout(100 * time.Millisecond)
 And specify the request timeout doing:
 
 ```go
-res, err := goreq.Request{ Uri: "http://www.google.com", Timeout: 500 * time.Millisecond }.Do()
+res, err := goreq.Request{ 
+    Uri: "http://www.google.com",
+    Timeout: 500 * time.Millisecond, 
+}.Do()
 ```
 
 ## Using the Response and Error
