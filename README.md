@@ -6,8 +6,9 @@ Simple and sane HTTP request library for Go language.
 Why GoReq?
 ==========
 
-Go has very nice native libraries that enables you to do lots of cool things. But sometimes those libraries are too low level, which means that to do a simple thing, like an HTTP Request, takes some time. And if you want to do something as simple as adding a timeout to the request, means that you need to write several lines of code.
-This is why we thing GoReq is useful. Because you can do all your HTTP requests in a very simple and comprehensive way, while enabling you to do more advanced stuff by giving you access to the native API.
+Go has very nice native libraries that allows you to do lots of cool things. But sometimes those libraries are too low level, which means that to do a simple thing, like an HTTP Request, it takes some time. And if you want to do something as simple as adding a timeout to a request, you will end up writing several lines of code.
+
+This is why we think GoReq is useful. Because you can do all your HTTP requests in a very simple and comprehensive way, while enabling you to do more advanced stuff by giving you access to the native API.
 
 How do I install it?
 ====================
@@ -50,6 +51,28 @@ res, err := goreq.Request{
 ```
 
 ## Specifiying request headers
+
+We think that most of the times the request headers that you use the most are: ```Host```, ```Content-Type```, ```Accept``` and ```User-Agent```. This is why we decided to make it very easy to set these headers.
+
+```go
+res, err := Request{
+    Uri: "http://www.google.com",
+    Host: "foobar.com",
+    Accept: "application/json",
+    ContentType: "application/json",
+    UserAgent: "goreq",
+}.Do()
+```
+
+But sometimes you need to set other headers. You can still do it.
+
+```go
+req := Request{ Uri: "http://www.google.com" }
+
+req.AddHeader("X-Custom", "somevalue")
+
+req.Do()
+```
 
 ## Setting timeouts
 
