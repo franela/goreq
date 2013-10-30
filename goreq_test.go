@@ -214,7 +214,24 @@ func TestRequest(t *testing.T) {
         })
 
         g.Describe("Misc", func() {
-            g.It("Should offer to set request headers")
+            g.It("Should offer to set request headers", func() {
+                ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+                    Expect(r.Header.Get("User-Agent")).Should(Equal("foobaragent"))
+                    Expect(r.Host).Should(Equal("foobar.com"))
+                    Expect(r.Header.Get("Accept")).Should(Equal("application/json"))
+                    Expect(r.Header.Get("Content-Type")).Should(Equal("application/json"))
+                    Expect(r.Header.Get("X-Custom")).Should(Equal("foobar"))
+
+                    w.WriteHeader(200)
+                }))
+                defer ts.Close()
+
+                req := Request{ Uri: ts.URL, Accept: "application/json", ContentType: "application/json", UserAgent: "foobaragent", Host: "foobar.com" }
+                req.AddHeader("X-Custom", "foobar")
+                res, _ := req.Do()
+
+                Expect(res.StatusCode).Should(Equal(200))
+            })
         })
     })
 }
