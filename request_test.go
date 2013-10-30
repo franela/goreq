@@ -7,8 +7,10 @@ import (
     "net/http/httptest"
     "net/http"
     "fmt"
-    "io/ioutil"
     "strings"
+    "time"
+    "io"
+    "io/ioutil"
 )
 
 func TestRequest(t *testing.T) {
@@ -28,15 +30,13 @@ func TestRequest(t *testing.T) {
                         fmt.Fprint(w, "bar")
                     }
                     if r.Method == "POST" && r.URL.Path == "/" {
-                        body, _ := ioutil.ReadAll(r.Body)
                         w.Header().Add("Location", ts.URL + "/123")
                         w.WriteHeader(201)
-                        fmt.Fprint(w, string(body))
+                        io.Copy(w, r.Body)
                     }
                     if r.Method == "PUT" && r.URL.Path == "/foo/123" {
-                        body, _ := ioutil.ReadAll(r.Body)
                         w.WriteHeader(200)
-                        fmt.Fprint(w, string(body))
+                        io.Copy(w, r.Body)
                     }
                     if r.Method == "DELETE" && r.URL.Path == "/foo/123" {
                         w.WriteHeader(204)
@@ -160,8 +160,57 @@ func TestRequest(t *testing.T) {
         })
 
         g.Describe("Timeouts", func() {
-            g.It("Should timeout after a specified amount of ms")
-            g.It("Should connect timeout after a specified amount of ms")
+            g.Describe("Connection timeouts", func() {
+                g.It("Should connect timeout after a default of 1000 ms", func() {
+                    start := time.Now()
+                    res, err := Request{ Uri: "http://10.255.255.1" }.Do()
+                    elapsed := time.Since(start)
+
+                    Expect(elapsed).Should(BeNumerically("<", 1100 * time.Millisecond))
+                    Expect(elapsed).Should(BeNumerically(">=", 1000 * time.Millisecond))
+                    Expect(res).Should(BeNil())
+                    Expect(err.ConnectTimeout()).Should(BeTrue())
+                })
+                g.It("Should connect timeout after a custom amount of time", func() {
+                    SetConnectTimeout(100 * time.Millisecond)
+                    start := time.Now()
+                    res, err := Request{ Uri: "http://10.255.255.1" }.Do()
+                    elapsed := time.Since(start)
+
+                    Expect(elapsed).Should(BeNumerically("<", 150 * time.Millisecond))
+                    Expect(elapsed).Should(BeNumerically(">=", 100 * time.Millisecond))
+                    Expect(res).Should(BeNil())
+                    Expect(err.ConnectTimeout()).Should(BeTrue())
+                })
+            })
+            g.Describe("Request timeout", func() {
+                var ts *httptest.Server
+                stop := make(chan bool)
+
+                g.Before(func() {
+                    ts = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+                        <- stop
+                        // just wait for someone to tell you when to end the request. this is used to simulate a slow server
+                    }))
+                })
+                g.After(func() {
+                    stop <- true
+                    ts.Close()
+                })
+                g.It("Should request timeout after a custom amount of time", func() {
+                    SetConnectTimeout(1000 * time.Millisecond)
+
+                    start := time.Now()
+                    res, err := Request{ Uri: ts.URL, Timeout: 500 * time.Millisecond }.Do()
+                    elapsed := time.Since(start)
+
+                    Expect(elapsed).Should(BeNumerically("<", 550 * time.Millisecond))
+                    Expect(elapsed).Should(BeNumerically(">=", 500 * time.Millisecond))
+                    Expect(res).Should(BeNil())
+                    Expect(err.ConnectTimeout()).Should(BeFalse())
+                    Expect(err.RequestTimeout()).Should(BeTrue())
+                })
+            })
         })
 
         g.Describe("Misc", func() {
