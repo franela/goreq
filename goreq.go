@@ -12,16 +12,26 @@ import (
 )
 
 type Request struct {
+    headers []headerTuple
     Method string
     Uri string
     Body interface{}
     Timeout time.Duration
+    ContentType string
+    Accept string
+    Host string
+    UserAgent string
 }
 
 type Response struct {
     StatusCode int
     Body Body
     Header http.Header
+}
+
+type headerTuple struct {
+    name string
+    value string
 }
 
 type Body struct {
@@ -86,12 +96,31 @@ func SetConnectTimeout(duration time.Duration) {
     dialer.Timeout = duration
 }
 
+func (r *Request) AddHeader(name string, value string) {
+    if r.headers == nil {
+        r.headers = []headerTuple {}
+    }
+    r.headers = append(r.headers, headerTuple { name: name, value: value })
+}
+
 func (r Request) Do() (*Response, *Error) {
     client := &http.Client{ Transport: transport }
     b := prepareRequestBody(r.Body)
     req, _ := http.NewRequest(r.Method, r.Uri, b)
+
+    // add headers to the request
+    req.Host = r.Host
+    req.Header.Add("User-Agent", r.UserAgent)
+    req.Header.Add("Content-Type", r.ContentType)
+    req.Header.Add("Accept", r.Accept)
+    if r.headers != nil {
+        for _, header := range(r.headers) {
+            req.Header.Add(header.name, header.value)
+        }
+    }
+
     // TODO: handler error
-	requestTimeout := false
+    requestTimeout := false
     var timer *time.Timer
     if r.Timeout > 0 {
         timer = time.AfterFunc(r.Timeout, func() {
