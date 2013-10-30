@@ -1,4 +1,4 @@
-package request
+package goreq
 
 import (
     "io/ioutil"
