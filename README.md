@@ -102,12 +102,12 @@ You can check what happened by getting the error message:
 ```go
 fmt.Printlm(err.Error())
 ```
-And you do different things depending on the error type by using:
+And to make it easy to know if it was a timeout error, you can ask the error:
 
 ```go
-err.Timeout()
-err.Connection()
-err.Url()
+if err.Timeout() {
+    ...
+}
 ```
 Depending on what happened, those functions will return ```true``` or ```false```.
 
