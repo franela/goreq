@@ -51,18 +51,22 @@ func (e *Error) Error() (string) {
     return e.Err.Error()
 }
 
-func (b *Body) FromJsonTo(o interface{}) {
-    body, _ := ioutil.ReadAll(b)
-    // TODO: handle error
+func (b *Body) FromJsonTo(o interface{}) error {
+    if body, err := ioutil.ReadAll(b); err != nil {
+        return err
+    } else if err := json.Unmarshal(body, o); err != nil {
+        return err
+    }
 
-    json.Unmarshal(body, o)
-    // TODO: handle error
+    return nil
 }
 
-func (b *Body) ToString() (string) {
-    body, _ := ioutil.ReadAll(b)
-    // TODO: handle error
-    return string(body)
+func (b *Body) ToString() (string, error) {
+    body, err := ioutil.ReadAll(b)
+    if err != nil {
+        return "", err
+    }
+    return string(body), nil
 }
 
 func prepareRequestBody(b interface{}) (io.Reader, error) {
