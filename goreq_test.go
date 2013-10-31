@@ -11,6 +11,7 @@ import (
     "time"
     "io"
     "io/ioutil"
+    "math"
 )
 
 func TestRequest(t *testing.T) {
@@ -83,6 +84,13 @@ func TestRequest(t *testing.T) {
                     Expect(res.Body.ToString()).Should(Equal(`{"foo":"bar"}`))
                     Expect(res.StatusCode).Should(Equal(201))
                     Expect(res.Header.Get("Location")).Should(Equal(ts.URL + "/123"))
+                })
+
+                g.It("Should return an error when body is not JSON encodable", func() {
+                    res, err := Request{ Method: "POST", Uri: ts.URL, Body: math.NaN() }.Do()
+
+                    Expect(res).Should(BeNil())
+                    Expect(err).ShouldNot(BeNil())
                 })
             })
 
@@ -160,6 +168,7 @@ func TestRequest(t *testing.T) {
         })
 
         g.Describe("Timeouts", func() {
+
             g.Describe("Connection timeouts", func() {
                 g.It("Should connect timeout after a default of 1000 ms", func() {
                     start := time.Now()
@@ -169,7 +178,7 @@ func TestRequest(t *testing.T) {
                     Expect(elapsed).Should(BeNumerically("<", 1100 * time.Millisecond))
                     Expect(elapsed).Should(BeNumerically(">=", 1000 * time.Millisecond))
                     Expect(res).Should(BeNil())
-                    Expect(err.ConnectTimeout()).Should(BeTrue())
+                    Expect(err.Timeout()).Should(BeTrue())
                 })
                 g.It("Should connect timeout after a custom amount of time", func() {
                     SetConnectTimeout(100 * time.Millisecond)
@@ -180,9 +189,10 @@ func TestRequest(t *testing.T) {
                     Expect(elapsed).Should(BeNumerically("<", 150 * time.Millisecond))
                     Expect(elapsed).Should(BeNumerically(">=", 100 * time.Millisecond))
                     Expect(res).Should(BeNil())
-                    Expect(err.ConnectTimeout()).Should(BeTrue())
+                    Expect(err.Timeout()).Should(BeTrue())
                 })
             })
+
             g.Describe("Request timeout", func() {
                 var ts *httptest.Server
                 stop := make(chan bool)
@@ -207,8 +217,7 @@ func TestRequest(t *testing.T) {
                     Expect(elapsed).Should(BeNumerically("<", 550 * time.Millisecond))
                     Expect(elapsed).Should(BeNumerically(">=", 500 * time.Millisecond))
                     Expect(res).Should(BeNil())
-                    Expect(err.ConnectTimeout()).Should(BeFalse())
-                    Expect(err.RequestTimeout()).Should(BeTrue())
+                    Expect(err.Timeout()).Should(BeTrue())
                 })
             })
         })
@@ -231,6 +240,19 @@ func TestRequest(t *testing.T) {
                 res, _ := req.Do()
 
                 Expect(res.StatusCode).Should(Equal(200))
+            })
+        })
+
+        g.Describe("Errors", func() {
+            g.It("Should handle Url parsing errors", func() {
+                _, err := Request{ Uri: ":" }.Do()
+
+                Expect(err).ShouldNot(BeNil())
+            })
+            g.It("Should handle DNS errors", func() {
+                _, err := Request{ Uri: "http://*.localhost" }.Do()
+
+                Expect(err).ShouldNot(BeNil())
             })
         })
     })
