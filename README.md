@@ -109,9 +109,8 @@ if err.Timeout() {
     ...
 }
 ```
-Depending on what happened, those functions will return ```true``` or ```false```.
 
-If you don't get an error, you can use safely the ```Response```.
+If you don't get an error, you can safely use the ```Response```.
 
 ```go
 res.StatusCode //return the status code of the response
@@ -122,7 +121,7 @@ res.Header.Get("Content-Type") // gives you access to all the response headers
 
 ## Receiving JSON
 
-GoReq will help you to receive JSON.
+GoReq will help you to receive and unmarshal JSON.
 
 ```go
 type Item struct {
