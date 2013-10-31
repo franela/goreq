@@ -39,14 +39,16 @@ type Body struct {
 }
 
 type Error struct {
-    requestTimeout bool
+    timeout bool
+    Err error
 }
 
-func (e *Error) ConnectTimeout() (bool) {
-    return !e.requestTimeout
+func (e *Error) Timeout() (bool) {
+    return e.timeout
 }
-func (e *Error) RequestTimeout() (bool) {
-    return e.requestTimeout
+
+func (e *Error) Error() (string) {
+    return e.Err.Error()
 }
 
 func (b *Body) FromJsonTo(o interface{}) error {
@@ -59,13 +61,15 @@ func (b *Body) FromJsonTo(o interface{}) error {
     return nil
 }
 
-func (b *Body) ToString() (string) {
-    body, _ := ioutil.ReadAll(b)
-    // TODO: handle error
-    return string(body)
+func (b *Body) ToString() (string, error) {
+    body, err := ioutil.ReadAll(b)
+    if err != nil {
+        return "", err
+    }
+    return string(body), nil
 }
 
-func prepareRequestBody(b interface{}) (io.Reader) {
+func prepareRequestBody(b interface{}) (io.Reader, error) {
     var body io.Reader
 
     if sb, ok := b.(string); ok {
@@ -76,18 +80,18 @@ func prepareRequestBody(b interface{}) (io.Reader) {
         body = rb
     } else {
         // try to jsonify it
-        if j, err := json.Marshal(b); err == nil {
+        j, err := json.Marshal(b)
+        if err == nil {
             body = bytes.NewReader(j)
         } else {
-            // TODO: handle error. don't know what to do with this.
+            return nil, err
         }
     }
 
-   return body
+   return body, nil
 }
 
 func newResponse(res *http.Response) (*Response) {
-    // TODO: handle error
     return &Response{ StatusCode: res.StatusCode, Header: res.Header, Body: Body{ res.Body } }
 }
 
@@ -107,8 +111,19 @@ func (r *Request) AddHeader(name string, value string) {
 
 func (r Request) Do() (*Response, *Error) {
     client := &http.Client{ Transport: transport }
-    b := prepareRequestBody(r.Body)
-    req, _ := http.NewRequest(r.Method, r.Uri, b)
+    b, e := prepareRequestBody(r.Body)
+
+    if e != nil {
+        // there was a problem marshaling the body
+        return nil, &Error{ Err: e }
+    }
+
+    req, er := http.NewRequest(r.Method, r.Uri, b)
+
+    if er != nil {
+        // we couldn't parse the URL.
+        return nil, &Error{ Err: er }
+    }
 
     // add headers to the request
     req.Host = r.Host
@@ -121,22 +136,25 @@ func (r Request) Do() (*Response, *Error) {
         }
     }
 
-    // TODO: handler error
-    requestTimeout := false
+    timeout := false
     var timer *time.Timer
     if r.Timeout > 0 {
         timer = time.AfterFunc(r.Timeout, func() {
             transport.CancelRequest(req)
-            requestTimeout = true
+            timeout = true
         })
     }
+
     res, err := client.Do(req)
     if timer != nil {
         timer.Stop()
     }
-    // TODO: handler error
+
     if err != nil {
-        return nil, &Error{ requestTimeout: requestTimeout }
+        if op, ok := err.(*net.OpError); !timeout && ok {
+            timeout = op.Timeout()
+        }
+        return nil, &Error{ timeout: timeout, Err: err }
     }
     return newResponse(res), nil
 }
