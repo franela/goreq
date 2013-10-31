@@ -49,12 +49,14 @@ func (e *Error) RequestTimeout() (bool) {
     return e.requestTimeout
 }
 
-func (b *Body) FromJsonTo(o interface{}) {
-    body, _ := ioutil.ReadAll(b)
-    // TODO: handle error
+func (b *Body) FromJsonTo(o interface{}) error {
+    if body, err := ioutil.ReadAll(b); err != nil {
+        return err
+    } else if err := json.Unmarshal(body, o); err != nil {
+        return err
+    }
 
-    json.Unmarshal(body, o)
-    // TODO: handle error
+    return nil
 }
 
 func (b *Body) ToString() (string) {
