@@ -52,7 +52,7 @@ res, err := goreq.Request{
 
 ## Specifiying request headers
 
-We think that most of the times the request headers that you use the most are: ```Host```, ```Content-Type```, ```Accept``` and ```User-Agent```. This is why we decided to make it very easy to set these headers.
+We think that most of the times the request headers that you use are: ```Host```, ```Content-Type```, ```Accept``` and ```User-Agent```. This is why we decided to make it very easy to set these headers.
 
 ```go
 res, err := Request{
