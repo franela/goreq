@@ -52,7 +52,7 @@ res, err := goreq.Request{
 
 ## Specifiying request headers
 
-We think that most of the times the request headers that you use the most are: ```Host```, ```Content-Type```, ```Accept``` and ```User-Agent```. This is why we decided to make it very easy to set these headers.
+We think that most of the times the request headers that you use are: ```Host```, ```Content-Type```, ```Accept``` and ```User-Agent```. This is why we decided to make it very easy to set these headers.
 
 ```go
 res, err := Request{
@@ -102,16 +102,15 @@ You can check what happened by getting the error message:
 ```go
 fmt.Printlm(err.Error())
 ```
-And you do different things depending on the error type by using:
+And to make it easy to know if it was a timeout error, you can ask the error:
 
 ```go
-err.Timeout()
-err.Connection()
-err.Url()
+if err.Timeout() {
+    ...
+}
 ```
-Depending on what happened, those functions will return ```true``` or ```false```.
 
-If you don't get an error, you can use safely the ```Response```.
+If you don't get an error, you can safely use the ```Response```.
 
 ```go
 res.StatusCode //return the status code of the response
@@ -122,7 +121,7 @@ res.Header.Get("Content-Type") // gives you access to all the response headers
 
 ## Receiving JSON
 
-GoReq will help you to receive JSON.
+GoReq will help you to receive and unmarshal JSON.
 
 ```go
 type Item struct {
