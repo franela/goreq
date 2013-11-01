@@ -109,7 +109,7 @@ func (r *Request) AddHeader(name string, value string) {
     r.headers = append(r.headers, headerTuple { name: name, value: value })
 }
 
-func (r Request) Do() (*Response, *Error) {
+func (r Request) Do() (*Response, error) {
     client := &http.Client{ Transport: transport }
     b, e := prepareRequestBody(r.Body)
 

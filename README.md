@@ -102,12 +102,15 @@ You can check what happened by getting the error message:
 ```go
 fmt.Printlm(err.Error())
 ```
-And to make it easy to know if it was a timeout error, you can ask the error:
+And to make it easy to know if it was a timeout error, you can ask the error or return it:
 
 ```go
-if err.Timeout() {
-    ...
+if serr, ok := err.(*goreq.Error); ok {
+    if serr.Timeout() {
+        ...
+    }
 }
+return err
 ```
 
 If you don't get an error, you can safely use the ```Response```.
