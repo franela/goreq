@@ -188,7 +188,7 @@ func TestRequest(t *testing.T) {
                     Expect(elapsed).Should(BeNumerically("<", 1100 * time.Millisecond))
                     Expect(elapsed).Should(BeNumerically(">=", 1000 * time.Millisecond))
                     Expect(res).Should(BeNil())
-                    Expect(err.Timeout()).Should(BeTrue())
+                    Expect(err.(*Error).Timeout()).Should(BeTrue())
                 })
                 g.It("Should connect timeout after a custom amount of time", func() {
                     SetConnectTimeout(100 * time.Millisecond)
@@ -199,7 +199,7 @@ func TestRequest(t *testing.T) {
                     Expect(elapsed).Should(BeNumerically("<", 150 * time.Millisecond))
                     Expect(elapsed).Should(BeNumerically(">=", 100 * time.Millisecond))
                     Expect(res).Should(BeNil())
-                    Expect(err.Timeout()).Should(BeTrue())
+                    Expect(err.(*Error).Timeout()).Should(BeTrue())
                 })
             })
 
@@ -227,7 +227,7 @@ func TestRequest(t *testing.T) {
                     Expect(elapsed).Should(BeNumerically("<", 550 * time.Millisecond))
                     Expect(elapsed).Should(BeNumerically(">=", 500 * time.Millisecond))
                     Expect(res).Should(BeNil())
-                    Expect(err.Timeout()).Should(BeTrue())
+                    Expect(err.(*Error).Timeout()).Should(BeTrue())
                 })
             })
         })
