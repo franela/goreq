@@ -100,7 +100,7 @@ If ```Error``` is not ```nil``` it means that an error happened while doing the 
 You can check what happened by getting the error message:
 
 ```go
-fmt.Printlm(err.Error())
+fmt.Println(err.Error())
 ```
 And to make it easy to know if it was a timeout error, you can ask the error or return it:
 
