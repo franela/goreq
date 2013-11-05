@@ -3,10 +3,10 @@ package goreq
 import (
     "io/ioutil"
     "net/http"
+    "bytes"
     "strings"
     "io"
     "encoding/json"
-    "bytes"
     "time"
     "net"
 )
@@ -78,6 +78,9 @@ func prepareRequestBody(b interface{}) (io.Reader, error) {
     } else if rb, ok := b.(io.Reader); ok {
         // treat is as text
         body = rb
+    } else if bb, ok := b.([]byte); ok {
+        //treat as byte array
+        body = bytes.NewReader(bb)
     } else {
         // try to jsonify it
         j, err := json.Marshal(b)
