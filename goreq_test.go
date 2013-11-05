@@ -90,6 +90,18 @@ func TestRequest(t *testing.T) {
                     Expect(res.Header.Get("Location")).Should(Equal(ts.URL + "/123"))
                 })
 
+                g.It("Send an array of bytes", func() {
+                    bdy := []byte{'f','o','o'}
+                    res, err := Request{ Method: "POST", Uri: ts.URL, Body: bdy}.Do()
+
+                    Expect(err).Should(BeNil())
+                    str, _ := res.Body.ToString()
+                    Expect(str).Should(Equal("foo"))
+                    Expect(res.StatusCode).Should(Equal(201))
+                    Expect(res.Header.Get("Location")).Should(Equal(ts.URL + "/123"))
+                })
+
+
                 g.It("Should return an error when body is not JSON encodable", func() {
                     res, err := Request{ Method: "POST", Uri: ts.URL, Body: math.NaN() }.Do()
 
