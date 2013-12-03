@@ -1,17 +1,17 @@
 package goreq
 
 import (
-    "testing"
-    . "github.com/onsi/gomega"
-    . "github.com/franela/goblin"
-    "net/http/httptest"
-    "net/http"
     "fmt"
-    "strings"
-    "time"
+    . "github.com/franela/goblin"
+    . "github.com/onsi/gomega"
     "io"
     "io/ioutil"
     "math"
+    "net/http"
+    "net/http/httptest"
+    "strings"
+    "testing"
+    "time"
 )
 
 func TestRequest(t *testing.T) {
@@ -31,7 +31,7 @@ func TestRequest(t *testing.T) {
                         fmt.Fprint(w, "bar")
                     }
                     if r.Method == "POST" && r.URL.Path == "/" {
-                        w.Header().Add("Location", ts.URL + "/123")
+                        w.Header().Add("Location", ts.URL+"/123")
                         w.WriteHeader(201)
                         io.Copy(w, r.Body)
                     }
@@ -50,7 +50,7 @@ func TestRequest(t *testing.T) {
             })
 
             g.It("Should do a GET", func() {
-                res, err := Request{ Uri: ts.URL + "/foo" }.Do()
+                res, err := Request{Uri: ts.URL + "/foo"}.Do()
 
                 Expect(err).Should(BeNil())
                 str, _ := res.Body.ToString()
@@ -60,7 +60,7 @@ func TestRequest(t *testing.T) {
 
             g.Describe("POST", func() {
                 g.It("Should send a string", func() {
-                    res, err := Request{ Method: "POST", Uri: ts.URL, Body: "foo" }.Do()
+                    res, err := Request{Method: "POST", Uri: ts.URL, Body: "foo"}.Do()
 
                     Expect(err).Should(BeNil())
                     str, _ := res.Body.ToString()
@@ -70,7 +70,7 @@ func TestRequest(t *testing.T) {
                 })
 
                 g.It("Should send a Reader", func() {
-                    res, err := Request{ Method: "POST", Uri: ts.URL, Body: strings.NewReader("foo") }.Do()
+                    res, err := Request{Method: "POST", Uri: ts.URL, Body: strings.NewReader("foo")}.Do()
 
                     Expect(err).Should(BeNil())
                     str, _ := res.Body.ToString()
@@ -80,8 +80,8 @@ func TestRequest(t *testing.T) {
                 })
 
                 g.It("Send any object that is json encodable", func() {
-                    obj := map[string]string {"foo": "bar"}
-                    res, err := Request{ Method: "POST", Uri: ts.URL, Body: obj}.Do()
+                    obj := map[string]string{"foo": "bar"}
+                    res, err := Request{Method: "POST", Uri: ts.URL, Body: obj}.Do()
 
                     Expect(err).Should(BeNil())
                     str, _ := res.Body.ToString()
@@ -91,8 +91,8 @@ func TestRequest(t *testing.T) {
                 })
 
                 g.It("Send an array of bytes", func() {
-                    bdy := []byte{'f','o','o'}
-                    res, err := Request{ Method: "POST", Uri: ts.URL, Body: bdy}.Do()
+                    bdy := []byte{'f', 'o', 'o'}
+                    res, err := Request{Method: "POST", Uri: ts.URL, Body: bdy}.Do()
 
                     Expect(err).Should(BeNil())
                     str, _ := res.Body.ToString()
@@ -101,9 +101,8 @@ func TestRequest(t *testing.T) {
                     Expect(res.Header.Get("Location")).Should(Equal(ts.URL + "/123"))
                 })
 
-
                 g.It("Should return an error when body is not JSON encodable", func() {
-                    res, err := Request{ Method: "POST", Uri: ts.URL, Body: math.NaN() }.Do()
+                    res, err := Request{Method: "POST", Uri: ts.URL, Body: math.NaN()}.Do()
 
                     Expect(res).Should(BeNil())
                     Expect(err).ShouldNot(BeNil())
@@ -111,7 +110,7 @@ func TestRequest(t *testing.T) {
             })
 
             g.It("Should do a PUT", func() {
-                res, err := Request{ Method: "PUT", Uri: ts.URL + "/foo/123", Body: "foo" }.Do()
+                res, err := Request{Method: "PUT", Uri: ts.URL + "/foo/123", Body: "foo"}.Do()
 
                 Expect(err).Should(BeNil())
                 str, _ := res.Body.ToString()
@@ -120,14 +119,14 @@ func TestRequest(t *testing.T) {
             })
 
             g.It("Should do a DELETE", func() {
-                res, err := Request{ Method: "DELETE", Uri: ts.URL + "/foo/123" }.Do()
+                res, err := Request{Method: "DELETE", Uri: ts.URL + "/foo/123"}.Do()
 
                 Expect(err).Should(BeNil())
                 Expect(res.StatusCode).Should(Equal(204))
             })
 
             g.It("Should do a OPTIONS", func() {
-                res, err := Request{ Method: "OPTIONS", Uri: ts.URL + "/foo" }.Do()
+                res, err := Request{Method: "OPTIONS", Uri: ts.URL + "/foo"}.Do()
 
                 Expect(err).Should(BeNil())
                 str, _ := res.Body.ToString()
@@ -136,7 +135,7 @@ func TestRequest(t *testing.T) {
             })
 
             g.It("Should do a PATCH", func() {
-                res, err := Request{ Method: "PATCH", Uri: ts.URL + "/foo" }.Do()
+                res, err := Request{Method: "PATCH", Uri: ts.URL + "/foo"}.Do()
 
                 Expect(err).Should(BeNil())
                 str, _ := res.Body.ToString()
@@ -145,7 +144,7 @@ func TestRequest(t *testing.T) {
             })
 
             g.It("Should do a TRACE", func() {
-                res, err := Request{ Method: "TRACE", Uri: ts.URL + "/foo" }.Do()
+                res, err := Request{Method: "TRACE", Uri: ts.URL + "/foo"}.Do()
 
                 Expect(err).Should(BeNil())
                 str, _ := res.Body.ToString()
@@ -154,7 +153,7 @@ func TestRequest(t *testing.T) {
             })
 
             g.It("Should do a custom method", func() {
-                res, err := Request{ Method: "FOOBAR", Uri: ts.URL + "/foo" }.Do()
+                res, err := Request{Method: "FOOBAR", Uri: ts.URL + "/foo"}.Do()
 
                 Expect(err).Should(BeNil())
                 str, _ := res.Body.ToString()
@@ -164,28 +163,28 @@ func TestRequest(t *testing.T) {
 
             g.Describe("Responses", func() {
                 g.It("Should handle strings", func() {
-                    res, _ := Request{ Method: "POST", Uri: ts.URL, Body: "foo bar" }.Do()
+                    res, _ := Request{Method: "POST", Uri: ts.URL, Body: "foo bar"}.Do()
 
                     str, _ := res.Body.ToString()
                     Expect(str).Should(Equal("foo bar"))
-                });
+                })
 
                 g.It("Should handle io.ReaderCloser", func() {
-                    res, _ := Request{ Method: "POST", Uri: ts.URL, Body: "foo bar" }.Do()
+                    res, _ := Request{Method: "POST", Uri: ts.URL, Body: "foo bar"}.Do()
 
                     body, _ := ioutil.ReadAll(res.Body)
                     Expect(string(body)).Should(Equal("foo bar"))
-                });
+                })
 
                 g.It("Should handle parsing JSON", func() {
-                    res, _ := Request{ Method: "POST", Uri: ts.URL, Body: `{"foo": "bar"}` }.Do()
+                    res, _ := Request{Method: "POST", Uri: ts.URL, Body: `{"foo": "bar"}`}.Do()
 
                     var foobar map[string]string
 
                     res.Body.FromJsonTo(&foobar)
 
-                    Expect(foobar).Should(Equal(map[string]string { "foo": "bar" }))
-                });
+                    Expect(foobar).Should(Equal(map[string]string{"foo": "bar"}))
+                })
             })
         })
 
@@ -194,22 +193,22 @@ func TestRequest(t *testing.T) {
             g.Describe("Connection timeouts", func() {
                 g.It("Should connect timeout after a default of 1000 ms", func() {
                     start := time.Now()
-                    res, err := Request{ Uri: "http://10.255.255.1" }.Do()
+                    res, err := Request{Uri: "http://10.255.255.1"}.Do()
                     elapsed := time.Since(start)
 
-                    Expect(elapsed).Should(BeNumerically("<", 1100 * time.Millisecond))
-                    Expect(elapsed).Should(BeNumerically(">=", 1000 * time.Millisecond))
+                    Expect(elapsed).Should(BeNumerically("<", 1100*time.Millisecond))
+                    Expect(elapsed).Should(BeNumerically(">=", 1000*time.Millisecond))
                     Expect(res).Should(BeNil())
                     Expect(err.(*Error).Timeout()).Should(BeTrue())
                 })
                 g.It("Should connect timeout after a custom amount of time", func() {
                     SetConnectTimeout(100 * time.Millisecond)
                     start := time.Now()
-                    res, err := Request{ Uri: "http://10.255.255.1" }.Do()
+                    res, err := Request{Uri: "http://10.255.255.1"}.Do()
                     elapsed := time.Since(start)
 
-                    Expect(elapsed).Should(BeNumerically("<", 150 * time.Millisecond))
-                    Expect(elapsed).Should(BeNumerically(">=", 100 * time.Millisecond))
+                    Expect(elapsed).Should(BeNumerically("<", 150*time.Millisecond))
+                    Expect(elapsed).Should(BeNumerically(">=", 100*time.Millisecond))
                     Expect(res).Should(BeNil())
                     Expect(err.(*Error).Timeout()).Should(BeTrue())
                 })
@@ -221,7 +220,7 @@ func TestRequest(t *testing.T) {
 
                 g.Before(func() {
                     ts = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-                        <- stop
+                        <-stop
                         // just wait for someone to tell you when to end the request. this is used to simulate a slow server
                     }))
                 })
@@ -233,11 +232,11 @@ func TestRequest(t *testing.T) {
                     SetConnectTimeout(1000 * time.Millisecond)
 
                     start := time.Now()
-                    res, err := Request{ Uri: ts.URL, Timeout: 500 * time.Millisecond }.Do()
+                    res, err := Request{Uri: ts.URL, Timeout: 500 * time.Millisecond}.Do()
                     elapsed := time.Since(start)
 
-                    Expect(elapsed).Should(BeNumerically("<", 550 * time.Millisecond))
-                    Expect(elapsed).Should(BeNumerically(">=", 500 * time.Millisecond))
+                    Expect(elapsed).Should(BeNumerically("<", 550*time.Millisecond))
+                    Expect(elapsed).Should(BeNumerically(">=", 500*time.Millisecond))
                     Expect(res).Should(BeNil())
                     Expect(err.(*Error).Timeout()).Should(BeTrue())
                 })
@@ -257,7 +256,7 @@ func TestRequest(t *testing.T) {
                 }))
                 defer ts.Close()
 
-                req := Request{ Uri: ts.URL, Accept: "application/json", ContentType: "application/json", UserAgent: "foobaragent", Host: "foobar.com" }
+                req := Request{Uri: ts.URL, Accept: "application/json", ContentType: "application/json", UserAgent: "foobaragent", Host: "foobar.com"}
                 req.AddHeader("X-Custom", "foobar")
                 res, _ := req.Do()
 
@@ -271,7 +270,7 @@ func TestRequest(t *testing.T) {
             g.Before(func() {
                 ts = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
                     if r.Method == "POST" && r.URL.Path == "/" {
-                        w.Header().Add("Location", ts.URL + "/123")
+                        w.Header().Add("Location", ts.URL+"/123")
                         w.WriteHeader(201)
                         io.Copy(w, r.Body)
                     }
@@ -282,19 +281,19 @@ func TestRequest(t *testing.T) {
                 ts.Close()
             })
             g.It("Should thorw an error when FromJsonTo fails", func() {
-                res, _ := Request{ Method: "POST", Uri: ts.URL, Body: `{"foo": "bar"` }.Do()
+                res, _ := Request{Method: "POST", Uri: ts.URL, Body: `{"foo": "bar"`}.Do()
                 var foobar map[string]string
 
                 err := res.Body.FromJsonTo(&foobar)
                 Expect(err).Should(HaveOccured())
             })
             g.It("Should handle Url parsing errors", func() {
-                _, err := Request{ Uri: ":" }.Do()
+                _, err := Request{Uri: ":"}.Do()
 
                 Expect(err).ShouldNot(BeNil())
             })
             g.It("Should handle DNS errors", func() {
-                _, err := Request{ Uri: "http://*.localhost" }.Do()
+                _, err := Request{Uri: "http://*.localhost"}.Do()
 
                 Expect(err).ShouldNot(BeNil())
             })
