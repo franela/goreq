@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"strings"
 	"time"
+	// "fmt"
 )
 
 type Request struct {
@@ -69,6 +70,14 @@ func (b *Body) ToString() (string, error) {
 	return string(body), nil
 }
 
+// func paramParse(data interface{})(string, error) {
+// 	var parse string
+// 	fmt.Printf(data.limit)
+
+// 	return parse, nil
+
+// }
+
 func prepareRequestBody(b interface{}) (io.Reader, error) {
 	var body io.Reader
 
@@ -113,6 +122,9 @@ func (r *Request) AddHeader(name string, value string) {
 }
 
 func (r Request) Do() (*Response, error) {
+	var req *http.Request
+	var er error
+	
 	client := &http.Client{Transport: transport}
 	b, e := prepareRequestBody(r.Body)
 
@@ -121,7 +133,13 @@ func (r Request) Do() (*Response, error) {
 		return nil, &Error{Err: e}
 	}
 
-	req, er := http.NewRequest(r.Method, r.Uri, b)
+	// param, e := paramParse(r.Data)
+
+	if strings.EqualFold(r.Method, "GET") || strings.EqualFold(r.Method, "") {
+		req, er = http.NewRequest(r.Method, r.Uri, nil)
+	} else {
+		req, er = http.NewRequest(r.Method, r.Uri, b)
+	}
 
 	if er != nil {
 		// we couldn't parse the URL.
