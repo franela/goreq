@@ -3,13 +3,16 @@ package goreq
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/oleiade/reflections"
 	"io"
 	"io/ioutil"
 	"net"
 	"net/http"
 	"strings"
 	"time"
-	// "fmt"
+	"fmt"
+	// "reflect"
+	
 )
 
 type Request struct {
@@ -17,6 +20,7 @@ type Request struct {
 	Method      string
 	Uri         string
 	Body        interface{}
+	Data    interface{}
 	Timeout     time.Duration
 	ContentType string
 	Accept      string
@@ -70,13 +74,22 @@ func (b *Body) ToString() (string, error) {
 	return string(body), nil
 }
 
-// func paramParse(data interface{})(string, error) {
-// 	var parse string
-// 	fmt.Printf(data.limit)
+func paramParse(data interface{})(string, error) {
+	var parse string
+	var m map[string]interface{}
 
-// 	return parse, nil
+	// Items will return a field name to
+	// field value map
+	m, _ = reflections.Items(data)
+	// fmt.Println(structItems)
+	for k, v := range m {
+		fmt.Printf("%s : %s\n", k, v)
+		fmt.Println(v)
+	}
+	
+	return parse, nil
 
-// }
+}
 
 func prepareRequestBody(b interface{}) (io.Reader, error) {
 	var body io.Reader
@@ -132,8 +145,9 @@ func (r Request) Do() (*Response, error) {
 		// there was a problem marshaling the body
 		return nil, &Error{Err: e}
 	}
-
-	// param, e := paramParse(r.Data)
+	fmt.Println(r.Data)
+	param, e := paramParse(r.Data)
+	fmt.Println(param)
 
 	if strings.EqualFold(r.Method, "GET") || strings.EqualFold(r.Method, "") {
 		req, er = http.NewRequest(r.Method, r.Uri, nil)
