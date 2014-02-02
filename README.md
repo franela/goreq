@@ -22,11 +22,38 @@ What can I do with it?
 ======================
 
 ## Making requests with different methods
+
+#### GET
 ```go
 res, err := goreq.Request{ Uri: "http://www.google.com" }.Do()
 ```
 
 GoReq default method is GET.
+
+You can also set value to GET method easily
+
+```go
+type Item struct {
+        Limit int
+        Skip int
+        Fields string
+}
+
+item := Item {
+        Limit: 3,
+        Skip: 5,
+        Fields: "Value",
+}
+
+res, err := goreq.Request{
+        Uri: "http://localhost:3000/",
+        Data: item,
+}.Do()
+```
+
+The sample above will send `http://localhost:3000/?limit=3&skip=5&fields=Value`
+
+#### POST
 
 ```go
 res, err := goreq.Request{ Method: "POST", Uri: "http://www.google.com" }.Do()
