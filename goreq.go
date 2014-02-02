@@ -3,7 +3,6 @@ package goreq
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/oleiade/reflections"
 	"io"
 	"io/ioutil"
 	"net"
@@ -11,8 +10,8 @@ import (
 	"strings"
 	"time"
 	"fmt"
-	// "reflect"
-	
+	"reflect"
+	"net/url"
 )
 
 type Request struct {
@@ -74,20 +73,22 @@ func (b *Body) ToString() (string, error) {
 	return string(body), nil
 }
 
-func paramParse(data interface{})(string, error) {
-	var parse string
-	var m map[string]interface{}
+func concat(a, b []string) []string { 
+	return append(a, b...)
+}
 
-	// Items will return a field name to
-	// field value map
-	m, _ = reflections.Items(data)
-	// fmt.Println(structItems)
-	for k, v := range m {
-		fmt.Printf("%s : %s\n", k, v)
-		fmt.Println(v)
+func paramParse(data interface{})(string, error) {
+	var (
+		v = &url.Values{}
+		s = reflect.ValueOf(data)
+		t = reflect.TypeOf(data)
+	)
+
+	for i := 0; i < s.NumField(); i++ {
+		v.Add(strings.ToLower(t.Field(i).Name), fmt.Sprintf("%v", s.Field(i).Interface()))
 	}
-	
-	return parse, nil
+
+	return v.Encode(), nil
 
 }
 
@@ -137,7 +138,7 @@ func (r *Request) AddHeader(name string, value string) {
 func (r Request) Do() (*Response, error) {
 	var req *http.Request
 	var er error
-	
+
 	client := &http.Client{Transport: transport}
 	b, e := prepareRequestBody(r.Body)
 
@@ -145,11 +146,15 @@ func (r Request) Do() (*Response, error) {
 		// there was a problem marshaling the body
 		return nil, &Error{Err: e}
 	}
-	fmt.Println(r.Data)
-	param, e := paramParse(r.Data)
-	fmt.Println(param)
 
 	if strings.EqualFold(r.Method, "GET") || strings.EqualFold(r.Method, "") {
+		if r.Data != nil {	
+			param, e := paramParse(r.Data)
+			if e != nil {
+				return nil, &Error{Err: e}
+			}
+			r.Uri = r.Uri + "?" + param
+		}
 		req, er = http.NewRequest(r.Method, r.Uri, nil)
 	} else {
 		req, er = http.NewRequest(r.Method, r.Uri, b)
