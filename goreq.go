@@ -19,7 +19,7 @@ type Request struct {
 	Method      string
 	Uri         string
 	Body        interface{}
-	Data    interface{}
+	QueryString interface{}
 	Timeout     time.Duration
 	ContentType string
 	Accept      string
@@ -77,11 +77,11 @@ func concat(a, b []string) []string {
 	return append(a, b...)
 }
 
-func paramParse(data interface{})(string, error) {
+func paramParse(query interface{})(string, error) {
 	var (
 		v = &url.Values{}
-		s = reflect.ValueOf(data)
-		t = reflect.TypeOf(data)
+		s = reflect.ValueOf(query)
+		t = reflect.TypeOf(query)
 	)
 
 	for i := 0; i < s.NumField(); i++ {
@@ -148,8 +148,8 @@ func (r Request) Do() (*Response, error) {
 	}
 
 	if strings.EqualFold(r.Method, "GET") || strings.EqualFold(r.Method, "") {
-		if r.Data != nil {	
-			param, e := paramParse(r.Data)
+		if r.QueryString != nil {	
+			param, e := paramParse(r.QueryString)
 			if e != nil {
 				return nil, &Error{Err: e}
 			}
