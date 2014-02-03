@@ -47,7 +47,7 @@ item := Item {
 
 res, err := goreq.Request{
         Uri: "http://localhost:3000/",
-        Data: item,
+        QueryString: item,
 }.Do()
 ```
 
