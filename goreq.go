@@ -9,6 +9,9 @@ import (
 	"net/http"
 	"strings"
 	"time"
+	"fmt"
+	"reflect"
+	"net/url"
 )
 
 type Request struct {
@@ -16,6 +19,7 @@ type Request struct {
 	Method      string
 	Uri         string
 	Body        interface{}
+	QueryString interface{}
 	Timeout     time.Duration
 	ContentType string
 	Accept      string
@@ -69,6 +73,25 @@ func (b *Body) ToString() (string, error) {
 	return string(body), nil
 }
 
+func concat(a, b []string) []string { 
+	return append(a, b...)
+}
+
+func paramParse(query interface{})(string, error) {
+	var (
+		v = &url.Values{}
+		s = reflect.ValueOf(query)
+		t = reflect.TypeOf(query)
+	)
+
+	for i := 0; i < s.NumField(); i++ {
+		v.Add(strings.ToLower(t.Field(i).Name), fmt.Sprintf("%v", s.Field(i).Interface()))
+	}
+
+	return v.Encode(), nil
+
+}
+
 func prepareRequestBody(b interface{}) (io.Reader, error) {
 	var body io.Reader
 
@@ -113,6 +136,9 @@ func (r *Request) AddHeader(name string, value string) {
 }
 
 func (r Request) Do() (*Response, error) {
+	var req *http.Request
+	var er error
+
 	client := &http.Client{Transport: transport}
 	b, e := prepareRequestBody(r.Body)
 
@@ -121,7 +147,18 @@ func (r Request) Do() (*Response, error) {
 		return nil, &Error{Err: e}
 	}
 
-	req, er := http.NewRequest(r.Method, r.Uri, b)
+	if strings.EqualFold(r.Method, "GET") || strings.EqualFold(r.Method, "") {
+		if r.QueryString != nil {	
+			param, e := paramParse(r.QueryString)
+			if e != nil {
+				return nil, &Error{Err: e}
+			}
+			r.Uri = r.Uri + "?" + param
+		}
+		req, er = http.NewRequest(r.Method, r.Uri, nil)
+	} else {
+		req, er = http.NewRequest(r.Method, r.Uri, b)
+	}
 
 	if er != nil {
 		// we couldn't parse the URL.

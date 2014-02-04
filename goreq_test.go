@@ -14,7 +14,19 @@ import (
 	"time"
 )
 
+type Query struct {
+	Limit int
+	Skip int
+}
+
 func TestRequest(t *testing.T) {
+
+
+	query := Query {
+		Limit: 3,
+		Skip: 5,
+	}
+
 	g := Goblin(t)
 
 	RegisterFailHandler(func(m string, _ ...int) { g.Fail(m) })
@@ -29,6 +41,10 @@ func TestRequest(t *testing.T) {
 					if (r.Method == "GET" || r.Method == "OPTIONS" || r.Method == "TRACE" || r.Method == "PATCH" || r.Method == "FOOBAR") && r.URL.Path == "/foo" {
 						w.WriteHeader(200)
 						fmt.Fprint(w, "bar")
+					}
+					if r.Method == "GET" && r.URL.Path == "/getquery" {
+						w.WriteHeader(200)
+						fmt.Fprint(w, fmt.Sprintf("%v", r.URL))
 					}
 					if r.Method == "POST" && r.URL.Path == "/" {
 						w.Header().Add("Location", ts.URL+"/123")
@@ -49,13 +65,29 @@ func TestRequest(t *testing.T) {
 				ts.Close()
 			})
 
-			g.It("Should do a GET", func() {
-				res, err := Request{Uri: ts.URL + "/foo"}.Do()
+			g.Describe("GET", func() {
 
-				Expect(err).Should(BeNil())
-				str, _ := res.Body.ToString()
-				Expect(str).Should(Equal("bar"))
-				Expect(res.StatusCode).Should(Equal(200))
+				g.It("Should do a GET", func() {
+					res, err := Request{Uri: ts.URL + "/foo"}.Do()
+
+					Expect(err).Should(BeNil())
+					str, _ := res.Body.ToString()
+					Expect(str).Should(Equal("bar"))
+					Expect(res.StatusCode).Should(Equal(200))
+				})
+
+				g.It("Should do a GET with querystring", func() {
+					res, err := Request{
+						Uri: ts.URL + "/getquery",
+						QueryString: query,
+					}.Do()
+
+					Expect(err).Should(BeNil())
+					str, _ := res.Body.ToString()
+					Expect(str).Should(Equal("/getquery?limit=3&skip=5"))
+					Expect(res.StatusCode).Should(Equal(200))
+				})
+
 			})
 
 			g.Describe("POST", func() {
