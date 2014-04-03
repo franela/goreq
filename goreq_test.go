@@ -316,7 +316,7 @@ func TestRequest(t *testing.T) {
 				var foobar map[string]string
 
 				err := res.Body.FromJsonTo(&foobar)
-				Expect(err).Should(HaveOccured())
+				Expect(err).Should(HaveOccurred())
 			})
 			g.It("Should handle Url parsing errors", func() {
 				_, err := Request{Uri: ":"}.Do()
