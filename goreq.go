@@ -16,6 +16,7 @@ import (
 )
 
 type Request struct {
+	transport   *http.Transport
 	headers     []headerTuple
 	Method      string
 	Uri         string
@@ -133,19 +134,22 @@ func (r *Request) AddHeader(name string, value string) {
 }
 
 func (r Request) Do() (*Response, error) {
-	var transport = &http.Transport{Dial: dialer.Dial}
 	var req *http.Request
 	var er error
 
-	if r.Insecure {
-		transport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
-	} else if transport.TLSClientConfig != nil {
-		// the default TLS client (when transport.TLSClientConfig==nil) is
-		// already set to verify, so do nothing in that case
-		transport.TLSClientConfig.InsecureSkipVerify = false
+	if r.transport == nil {
+		r.transport = &http.Transport{Dial: dialer.Dial}
 	}
 
-	client := &http.Client{Transport: transport}
+	if r.Insecure {
+		r.transport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+	} else if r.transport.TLSClientConfig != nil {
+		// the default TLS client (when transport.TLSClientConfig==nil) is
+		// already set to verify, so do nothing in that case
+		r.transport.TLSClientConfig.InsecureSkipVerify = false
+	}
+
+	client := &http.Client{Transport: r.transport}
 	b, e := prepareRequestBody(r.Body)
 
 	if e != nil {
@@ -186,7 +190,7 @@ func (r Request) Do() (*Response, error) {
 	var timer *time.Timer
 	if r.Timeout > 0 {
 		timer = time.AfterFunc(r.Timeout, func() {
-			transport.CancelRequest(req)
+			r.transport.CancelRequest(req)
 			timeout = true
 		})
 	}
