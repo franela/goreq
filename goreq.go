@@ -3,15 +3,15 @@ package goreq
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net"
 	"net/http"
+	"net/url"
+	"reflect"
 	"strings"
 	"time"
-	"fmt"
-	"reflect"
-	"net/url"
 )
 
 type Request struct {
@@ -73,11 +73,11 @@ func (b *Body) ToString() (string, error) {
 	return string(body), nil
 }
 
-func concat(a, b []string) []string { 
+func concat(a, b []string) []string {
 	return append(a, b...)
 }
 
-func paramParse(query interface{})(string, error) {
+func paramParse(query interface{}) (string, error) {
 	var (
 		v = &url.Values{}
 		s = reflect.ValueOf(query)
@@ -122,7 +122,6 @@ func newResponse(res *http.Response) *Response {
 }
 
 var dialer = &net.Dialer{Timeout: 1000 * time.Millisecond}
-var transport = &http.Transport{Dial: dialer.Dial}
 
 func SetConnectTimeout(duration time.Duration) {
 	dialer.Timeout = duration
@@ -136,6 +135,7 @@ func (r *Request) AddHeader(name string, value string) {
 }
 
 func (r Request) Do() (*Response, error) {
+	var transport = &http.Transport{Dial: dialer.Dial}
 	var req *http.Request
 	var er error
 
@@ -148,7 +148,7 @@ func (r Request) Do() (*Response, error) {
 	}
 
 	if strings.EqualFold(r.Method, "GET") || strings.EqualFold(r.Method, "") {
-		if r.QueryString != nil {	
+		if r.QueryString != nil {
 			param, e := paramParse(r.QueryString)
 			if e != nil {
 				return nil, &Error{Err: e}
