@@ -16,15 +16,14 @@ import (
 
 type Query struct {
 	Limit int
-	Skip int
+	Skip  int
 }
 
 func TestRequest(t *testing.T) {
 
-
-	query := Query {
+	query := Query{
 		Limit: 3,
-		Skip: 5,
+		Skip:  5,
 	}
 
 	g := Goblin(t)
@@ -78,7 +77,7 @@ func TestRequest(t *testing.T) {
 
 				g.It("Should do a GET with querystring", func() {
 					res, err := Request{
-						Uri: ts.URL + "/getquery",
+						Uri:         ts.URL + "/getquery",
 						QueryString: query,
 					}.Do()
 
@@ -294,6 +293,24 @@ func TestRequest(t *testing.T) {
 
 				Expect(res.StatusCode).Should(Equal(200))
 			})
+			g.It("Should change transport TLS config if Request.Insecure is set", func() {
+				ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					w.WriteHeader(200)
+				}))
+				defer ts.Close()
+
+				trans := &http.Transport{Dial: dialer.Dial}
+				req := Request{
+					transport: trans,
+					Insecure:  true,
+					Uri:       ts.URL,
+					Host:      "foobar.com",
+				}
+				res, _ := req.Do()
+
+				Expect(trans.TLSClientConfig.InsecureSkipVerify).Should(Equal(true))
+				Expect(res.StatusCode).Should(Equal(200))
+			})
 		})
 
 		g.Describe("Errors", func() {
@@ -317,7 +334,7 @@ func TestRequest(t *testing.T) {
 				var foobar map[string]string
 
 				err := res.Body.FromJsonTo(&foobar)
-				Expect(err).Should(HaveOccured())
+				Expect(err).Should(HaveOccurred())
 			})
 			g.It("Should handle Url parsing errors", func() {
 				_, err := Request{Uri: ":"}.Do()

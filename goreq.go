@@ -2,19 +2,21 @@ package goreq
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net"
 	"net/http"
+	"net/url"
+	"reflect"
 	"strings"
 	"time"
-	"fmt"
-	"reflect"
-	"net/url"
 )
 
 type Request struct {
+	transport   *http.Transport
 	headers     []headerTuple
 	Method      string
 	Uri         string
@@ -25,6 +27,7 @@ type Request struct {
 	Accept      string
 	Host        string
 	UserAgent   string
+	Insecure    bool
 }
 
 type Response struct {
@@ -73,11 +76,7 @@ func (b *Body) ToString() (string, error) {
 	return string(body), nil
 }
 
-func concat(a, b []string) []string { 
-	return append(a, b...)
-}
-
-func paramParse(query interface{})(string, error) {
+func paramParse(query interface{}) (string, error) {
 	var (
 		v = &url.Values{}
 		s = reflect.ValueOf(query)
@@ -122,7 +121,6 @@ func newResponse(res *http.Response) *Response {
 }
 
 var dialer = &net.Dialer{Timeout: 1000 * time.Millisecond}
-var transport = &http.Transport{Dial: dialer.Dial}
 
 func SetConnectTimeout(duration time.Duration) {
 	dialer.Timeout = duration
@@ -139,7 +137,19 @@ func (r Request) Do() (*Response, error) {
 	var req *http.Request
 	var er error
 
-	client := &http.Client{Transport: transport}
+	if r.transport == nil {
+		r.transport = &http.Transport{Dial: dialer.Dial}
+	}
+
+	if r.Insecure {
+		r.transport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+	} else if r.transport.TLSClientConfig != nil {
+		// the default TLS client (when transport.TLSClientConfig==nil) is
+		// already set to verify, so do nothing in that case
+		r.transport.TLSClientConfig.InsecureSkipVerify = false
+	}
+
+	client := &http.Client{Transport: r.transport}
 	b, e := prepareRequestBody(r.Body)
 
 	if e != nil {
@@ -148,7 +158,7 @@ func (r Request) Do() (*Response, error) {
 	}
 
 	if strings.EqualFold(r.Method, "GET") || strings.EqualFold(r.Method, "") {
-		if r.QueryString != nil {	
+		if r.QueryString != nil {
 			param, e := paramParse(r.QueryString)
 			if e != nil {
 				return nil, &Error{Err: e}
@@ -180,7 +190,7 @@ func (r Request) Do() (*Response, error) {
 	var timer *time.Timer
 	if r.Timeout > 0 {
 		timer = time.AfterFunc(r.Timeout, func() {
-			transport.CancelRequest(req)
+			r.transport.CancelRequest(req)
 			timeout = true
 		})
 	}
