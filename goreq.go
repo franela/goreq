@@ -75,10 +75,6 @@ func (b *Body) ToString() (string, error) {
 	return string(body), nil
 }
 
-func concat(a, b []string) []string {
-	return append(a, b...)
-}
-
 func paramParse(query interface{}) (string, error) {
 	var (
 		v = &url.Values{}
