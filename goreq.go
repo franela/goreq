@@ -2,6 +2,7 @@ package goreq
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/json"
 	"io"
 	"io/ioutil"
@@ -25,6 +26,7 @@ type Request struct {
 	Accept      string
 	Host        string
 	UserAgent   string
+	Insecure    bool
 }
 
 type Response struct {
@@ -138,6 +140,10 @@ func (r *Request) AddHeader(name string, value string) {
 func (r Request) Do() (*Response, error) {
 	var req *http.Request
 	var er error
+
+	if r.Insecure {
+		transport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+	}
 
 	client := &http.Client{Transport: transport}
 	b, e := prepareRequestBody(r.Body)
