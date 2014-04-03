@@ -299,22 +299,16 @@ func TestRequest(t *testing.T) {
 				}))
 				defer ts.Close()
 
-				res, _ := Request{
-					Insecure: true,
-					Uri:      ts.URL,
-					Host:     "foobar.com",
-				}.Do()
+				trans := &http.Transport{Dial: dialer.Dial}
+				req := Request{
+					transport: trans,
+					Insecure:  true,
+					Uri:       ts.URL,
+					Host:      "foobar.com",
+				}
+				res, _ := req.Do()
 
-				Expect(transport.TLSClientConfig.InsecureSkipVerify).Should(Equal(true))
-				Expect(res.StatusCode).Should(Equal(200))
-
-				// Test that the TLSClientConfig is set back to RequireVerify for subsequent requests
-				res, _ = Request{
-					Uri:  ts.URL,
-					Host: "foobar.com",
-				}.Do()
-
-				Expect(transport.TLSClientConfig.InsecureSkipVerify).Should(Equal(false))
+				Expect(trans.TLSClientConfig.InsecureSkipVerify).Should(Equal(true))
 				Expect(res.StatusCode).Should(Equal(200))
 			})
 		})
