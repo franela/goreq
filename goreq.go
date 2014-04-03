@@ -120,7 +120,6 @@ func newResponse(res *http.Response) *Response {
 }
 
 var dialer = &net.Dialer{Timeout: 1000 * time.Millisecond}
-var transport = &http.Transport{Dial: dialer.Dial}
 
 func SetConnectTimeout(duration time.Duration) {
 	dialer.Timeout = duration
@@ -134,6 +133,7 @@ func (r *Request) AddHeader(name string, value string) {
 }
 
 func (r Request) Do() (*Response, error) {
+	var transport = &http.Transport{Dial: dialer.Dial}
 	var req *http.Request
 	var er error
 
