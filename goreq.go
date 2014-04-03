@@ -4,15 +4,15 @@ import (
 	"bytes"
 	"crypto/tls"
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net"
 	"net/http"
+	"net/url"
+	"reflect"
 	"strings"
 	"time"
-	"fmt"
-	"reflect"
-	"net/url"
 )
 
 type Request struct {
@@ -75,11 +75,11 @@ func (b *Body) ToString() (string, error) {
 	return string(body), nil
 }
 
-func concat(a, b []string) []string { 
+func concat(a, b []string) []string {
 	return append(a, b...)
 }
 
-func paramParse(query interface{})(string, error) {
+func paramParse(query interface{}) (string, error) {
 	var (
 		v = &url.Values{}
 		s = reflect.ValueOf(query)
@@ -154,7 +154,7 @@ func (r Request) Do() (*Response, error) {
 	}
 
 	if strings.EqualFold(r.Method, "GET") || strings.EqualFold(r.Method, "") {
-		if r.QueryString != nil {	
+		if r.QueryString != nil {
 			param, e := paramParse(r.QueryString)
 			if e != nil {
 				return nil, &Error{Err: e}
