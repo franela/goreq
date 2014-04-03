@@ -143,6 +143,10 @@ func (r Request) Do() (*Response, error) {
 
 	if r.Insecure {
 		transport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+	} else if transport.TLSClientConfig != nil {
+		// the default TLS client (when transport.TLSClientConfig==nil) is
+		// already set to verify, so do nothing in that case
+		transport.TLSClientConfig.InsecureSkipVerify = false
 	}
 
 	client := &http.Client{Transport: transport}

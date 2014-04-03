@@ -293,6 +293,30 @@ func TestRequest(t *testing.T) {
 
 				Expect(res.StatusCode).Should(Equal(200))
 			})
+			g.It("Should change transport TLS config if Request.Insecure is set", func() {
+				ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					w.WriteHeader(200)
+				}))
+				defer ts.Close()
+
+				res, _ := Request{
+					Insecure: true,
+					Uri:      ts.URL,
+					Host:     "foobar.com",
+				}.Do()
+
+				Expect(transport.TLSClientConfig.InsecureSkipVerify).Should(Equal(true))
+				Expect(res.StatusCode).Should(Equal(200))
+
+				// Test that the TLSClientConfig is set back to RequireVerify for subsequent requests
+				res, _ = Request{
+					Uri:  ts.URL,
+					Host: "foobar.com",
+				}.Do()
+
+				Expect(transport.TLSClientConfig.InsecureSkipVerify).Should(Equal(false))
+				Expect(res.StatusCode).Should(Equal(200))
+			})
 		})
 
 		g.Describe("Errors", func() {
