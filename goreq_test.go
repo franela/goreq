@@ -57,6 +57,18 @@ func TestRequest(t *testing.T) {
 					if r.Method == "DELETE" && r.URL.Path == "/foo/123" {
 						w.WriteHeader(204)
 					}
+					if r.Method == "GET" && r.URL.Path == "/redirect_test/301" {
+						http.Redirect(w, r, "/redirect_test/302", 301)
+					}
+					if r.Method == "GET" && r.URL.Path == "/redirect_test/302" {
+						http.Redirect(w, r, "/redirect_test/303", 302)
+					}
+					if r.Method == "GET" && r.URL.Path == "/redirect_test/303" {
+						http.Redirect(w, r, "/redirect_test/307", 303)
+					}
+					if r.Method == "GET" && r.URL.Path == "/redirect_test/307" {
+						http.Redirect(w, r, "/getquery", 307)
+					}
 				}))
 			})
 
@@ -215,6 +227,36 @@ func TestRequest(t *testing.T) {
 					res.Body.FromJsonTo(&foobar)
 
 					Expect(foobar).Should(Equal(map[string]string{"foo": "bar"}))
+				})
+			})
+			g.Describe("Redirects", func() {
+				g.It("Should do not follow by default", func() {
+					res, _ := Request{
+						Uri: ts.URL + "/redirect_test/301",
+					}.Do()
+					Expect(res.StatusCode).Should(Equal(301))
+				})
+				g.It("Should follow only specified number of MaxRedirects", func() {
+					res, _ := Request{
+						Uri:          ts.URL + "/redirect_test/301",
+						MaxRedirects: 1,
+					}.Do()
+					Expect(res.StatusCode).Should(Equal(302))
+					res, _ = Request{
+						Uri:          ts.URL + "/redirect_test/301",
+						MaxRedirects: 2,
+					}.Do()
+					Expect(res.StatusCode).Should(Equal(303))
+					res, _ = Request{
+						Uri:          ts.URL + "/redirect_test/301",
+						MaxRedirects: 3,
+					}.Do()
+					Expect(res.StatusCode).Should(Equal(307))
+					res, _ = Request{
+						Uri:          ts.URL + "/redirect_test/301",
+						MaxRedirects: 4,
+					}.Do()
+					Expect(res.StatusCode).Should(Equal(200))
 				})
 			})
 		})

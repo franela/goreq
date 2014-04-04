@@ -16,17 +16,18 @@ import (
 )
 
 type Request struct {
-	headers     []headerTuple
-	Method      string
-	Uri         string
-	Body        interface{}
-	QueryString interface{}
-	Timeout     time.Duration
-	ContentType string
-	Accept      string
-	Host        string
-	UserAgent   string
-	Insecure    bool
+	headers      []headerTuple
+	Method       string
+	Uri          string
+	Body         interface{}
+	QueryString  interface{}
+	Timeout      time.Duration
+	ContentType  string
+	Accept       string
+	Host         string
+	UserAgent    string
+	Insecure     bool
+	MaxRedirects int
 }
 
 type Response struct {
@@ -203,5 +204,28 @@ func (r Request) Do() (*Response, error) {
 		}
 		return nil, &Error{timeout: timeout, Err: err}
 	}
+
+	if isRedirect(res.StatusCode) && r.MaxRedirects > 0 {
+		loc, _ := res.Location()
+		r.MaxRedirects--
+		r.Uri = loc.String()
+		return r.Do()
+	}
+
 	return newResponse(res), nil
+}
+
+func isRedirect(status int) bool {
+	switch status {
+	case http.StatusMovedPermanently:
+		return true
+	case http.StatusFound:
+		return true
+	case http.StatusSeeOther:
+		return true
+	case http.StatusTemporaryRedirect:
+		return true
+	default:
+		return false
+	}
 }
