@@ -305,7 +305,7 @@ func TestRequest(t *testing.T) {
 				}
 				res, err := req.Do()
 
-				Expect(err).Should(HaveOccurred())
+                                Expect(err).Should(MatchError("x509: certificate signed by unknown authority"))
 
 				req = Request{
 					Insecure:  true,
