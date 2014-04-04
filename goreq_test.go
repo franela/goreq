@@ -294,21 +294,27 @@ func TestRequest(t *testing.T) {
 				Expect(res.StatusCode).Should(Equal(200))
 			})
 			g.It("Should change transport TLS config if Request.Insecure is set", func() {
-				ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				ts := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					w.WriteHeader(200)
 				}))
 				defer ts.Close()
 
-				trans := &http.Transport{Dial: dialer.Dial}
 				req := Request{
-					transport: trans,
+					Uri:       ts.URL,
+					Host:      "foobar.com",
+				}
+				res, err := req.Do()
+
+				Expect(err).Should(HaveOccurred())
+
+				req = Request{
 					Insecure:  true,
 					Uri:       ts.URL,
 					Host:      "foobar.com",
 				}
-				res, _ := req.Do()
+				res, err = req.Do()
 
-				Expect(trans.TLSClientConfig.InsecureSkipVerify).Should(Equal(true))
+				Expect(err).Should(BeNil())
 				Expect(res.StatusCode).Should(Equal(200))
 			})
 		})
