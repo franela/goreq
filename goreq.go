@@ -93,28 +93,24 @@ func paramParse(query interface{}) (string, error) {
 }
 
 func prepareRequestBody(b interface{}) (io.Reader, error) {
-	var body io.Reader
-
-	if sb, ok := b.(string); ok {
+	switch b.(type) {
+	case string:
 		// treat is as text
-		body = strings.NewReader(sb)
-	} else if rb, ok := b.(io.Reader); ok {
+		return strings.NewReader(b.(string)), nil
+	case io.Reader:
 		// treat is as text
-		body = rb
-	} else if bb, ok := b.([]byte); ok {
+		return b.(io.Reader), nil
+	case []byte:
 		//treat as byte array
-		body = bytes.NewReader(bb)
-	} else {
+		return bytes.NewReader(b.([]byte)), nil
+	default:
 		// try to jsonify it
 		j, err := json.Marshal(b)
 		if err == nil {
-			body = bytes.NewReader(j)
-		} else {
-			return nil, err
+			return bytes.NewReader(j), nil
 		}
+		return nil, err
 	}
-
-	return body, nil
 }
 
 func newResponse(res *http.Response) *Response {
