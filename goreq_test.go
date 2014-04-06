@@ -371,7 +371,7 @@ func TestRequest(t *testing.T) {
 			g.After(func() {
 				ts.Close()
 			})
-			g.It("Should thorw an error when FromJsonTo fails", func() {
+			g.It("Should throw an error when FromJsonTo fails", func() {
 				res, _ := Request{Method: "POST", Uri: ts.URL, Body: `{"foo": "bar"`}.Do()
 				var foobar map[string]string
 
