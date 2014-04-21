@@ -109,7 +109,7 @@ GoReq supports 2 kind of timeouts. A general connection timeout and a request sp
 You can change the connection timeout doing:
 
 ```go
-goreq.SetConnectionTimeout(100 * time.Millisecond)
+goreq.SetConnectTimeout(100 * time.Millisecond)
 ```
 
 And specify the request timeout doing:
