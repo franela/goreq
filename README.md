@@ -51,6 +51,22 @@ res, err := goreq.Request{
 }.Do()
 ```
 
+QueryString also support url.Values
+
+```go
+item := url.Values{}
+item.Set("Limit", 3)
+item.Add("Field", "somefield")
+item.Add("Field", "someotherfield")
+
+res, err := goreq.Request{
+        Uri: "http://localhost:3000/",
+        QueryString: item,
+}.Do()
+```
+
+
+
 The sample above will send `http://localhost:3000/?limit=3&skip=5&fields=Value`
 
 #### POST
