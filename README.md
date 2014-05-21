@@ -50,6 +50,8 @@ res, err := goreq.Request{
         QueryString: item,
 }.Do()
 ```
+The sample above will send `http://localhost:3000/?limit=3&skip=5&fields=Value`
+
 
 QueryString also support url.Values
 
@@ -65,9 +67,9 @@ res, err := goreq.Request{
 }.Do()
 ```
 
+The sample above will send `http://localhost:3000/?limit=3&field=somefield&field=someotherfield`
 
 
-The sample above will send `http://localhost:3000/?limit=3&skip=5&fields=Value`
 
 #### POST
 
