@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"math"
 	"net/http"
+	"net/url"
 	"net/http/httptest"
 	"strings"
 	"testing"
@@ -25,6 +26,11 @@ func TestRequest(t *testing.T) {
 		Limit: 3,
 		Skip:  5,
 	}
+
+        valuesQuery := url.Values{};
+        valuesQuery.Set("name", "marcos")
+        valuesQuery.Add("friend", "jonas")
+        valuesQuery.Add("friend", "peter")
 
 	g := Goblin(t)
 
@@ -96,6 +102,19 @@ func TestRequest(t *testing.T) {
 					Expect(err).Should(BeNil())
 					str, _ := res.Body.ToString()
 					Expect(str).Should(Equal("/getquery?limit=3&skip=5"))
+					Expect(res.StatusCode).Should(Equal(200))
+				})
+
+
+				g.It("Should support url.Values in querystring", func() {
+					res, err := Request{
+						Uri:         ts.URL + "/getquery",
+						QueryString: valuesQuery,
+					}.Do()
+
+					Expect(err).Should(BeNil())
+					str, _ := res.Body.ToString()
+					Expect(str).Should(Equal("/getquery?friend=jonas&friend=peter&name=marcos"))
 					Expect(res.StatusCode).Should(Equal(200))
 				})
 

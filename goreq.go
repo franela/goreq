@@ -84,12 +84,16 @@ func paramParse(query interface{}) (string, error) {
 		t = reflect.TypeOf(query)
 	)
 
-	for i := 0; i < s.NumField(); i++ {
-		v.Add(strings.ToLower(t.Field(i).Name), fmt.Sprintf("%v", s.Field(i).Interface()))
-	}
 
-	return v.Encode(), nil
-
+        switch query.(type) {
+        case url.Values:
+                return query.(url.Values).Encode(), nil
+        default:
+                for i := 0; i < s.NumField(); i++ {
+                        v.Add(strings.ToLower(t.Field(i).Name), fmt.Sprintf("%v", s.Field(i).Interface()))
+                }
+                return v.Encode(), nil
+        }
 }
 
 func prepareRequestBody(b interface{}) (io.Reader, error) {
