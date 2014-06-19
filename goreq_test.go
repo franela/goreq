@@ -51,10 +51,18 @@ func TestRequest(t *testing.T) {
 						w.WriteHeader(200)
 						fmt.Fprint(w, fmt.Sprintf("%v", r.URL))
 					}
+					if r.Method == "GET" && r.URL.Path == "/getbody" {
+						w.WriteHeader(200)
+						io.Copy(w, r.Body)
+					}
 					if r.Method == "POST" && r.URL.Path == "/" {
 						w.Header().Add("Location", ts.URL+"/123")
 						w.WriteHeader(201)
 						io.Copy(w, r.Body)
+					}
+					if r.Method == "POST" && r.URL.Path == "/getquery" {
+						w.WriteHeader(200)
+						fmt.Fprint(w, fmt.Sprintf("%v", r.URL))
 					}
 					if r.Method == "PUT" && r.URL.Path == "/foo/123" {
 						w.WriteHeader(200)
@@ -118,6 +126,51 @@ func TestRequest(t *testing.T) {
 					Expect(res.StatusCode).Should(Equal(200))
 				})
 
+				g.It("Should support sending string body", func() {
+					res, err := Request{Uri: ts.URL + "/getbody", Body: "foo"}.Do()
+
+					Expect(err).Should(BeNil())
+					str, _ := res.Body.ToString()
+					Expect(str).Should(Equal("foo"))
+					Expect(res.StatusCode).Should(Equal(200))
+				})
+
+				g.It("Shoulds support sending a Reader body", func() {
+					res, err := Request{Uri: ts.URL + "/getbody", Body: strings.NewReader("foo")}.Do()
+
+					Expect(err).Should(BeNil())
+					str, _ := res.Body.ToString()
+					Expect(str).Should(Equal("foo"))
+					Expect(res.StatusCode).Should(Equal(200))
+				})
+
+				g.It("Support sending any object that is json encodable", func() {
+					obj := map[string]string{"foo": "bar"}
+					res, err := Request{Uri: ts.URL + "/getbody", Body: obj}.Do()
+
+					Expect(err).Should(BeNil())
+					str, _ := res.Body.ToString()
+					Expect(str).Should(Equal(`{"foo":"bar"}`))
+					Expect(res.StatusCode).Should(Equal(200))
+				})
+
+				g.It("Support sending an array of bytes body", func() {
+					bdy := []byte{'f', 'o', 'o'}
+					res, err := Request{Uri: ts.URL + "/getbody", Body: bdy}.Do()
+
+					Expect(err).Should(BeNil())
+					str, _ := res.Body.ToString()
+					Expect(str).Should(Equal("foo"))
+					Expect(res.StatusCode).Should(Equal(200))
+				})
+
+				g.It("Should return an error when body is not JSON encodable", func() {
+					res, err := Request{Uri: ts.URL + "/getbody", Body: math.NaN()}.Do()
+
+					Expect(res).Should(BeNil())
+					Expect(err).ShouldNot(BeNil())
+				})
+
 			})
 
 			g.Describe("POST", func() {
@@ -168,6 +221,21 @@ func TestRequest(t *testing.T) {
 
 					Expect(res).Should(BeNil())
 					Expect(err).ShouldNot(BeNil())
+				})
+
+				g.It("Should do a POST with querystring", func() {
+					bdy := []byte{'f', 'o', 'o'}
+					res, err := Request{
+            Method: "POST",
+						Uri:         ts.URL + "/getquery",
+            Body: bdy,
+						QueryString: query,
+					}.Do()
+
+					Expect(err).Should(BeNil())
+					str, _ := res.Body.ToString()
+					Expect(str).Should(Equal("/getquery?limit=3&skip=5"))
+					Expect(res.StatusCode).Should(Equal(200))
 				})
 			})
 
