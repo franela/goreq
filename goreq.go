@@ -139,9 +139,11 @@ func (r Request) Do() (*Response, error) {
 	var er error
 
 	if r.transport == nil {
+		// we want to set the proxy just once
 		if r.ProxyAddress != "" {
 			proxyUrl, err := url.Parse(r.ProxyAddress)
 			if err != nil {
+				// proxy address is in a wrong format
 				return nil, &Error{Err: err}
 			}
 			r.transport = &http.Transport{Proxy: http.ProxyURL(proxyUrl), Dial: dialer.Dial}
