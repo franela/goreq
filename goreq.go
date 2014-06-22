@@ -29,7 +29,7 @@ type Request struct {
 	UserAgent    string
 	Insecure     bool
 	MaxRedirects int
-	Proxy        string
+	ProxyAddress string
 }
 
 type Response struct {
@@ -139,13 +139,12 @@ func (r Request) Do() (*Response, error) {
 	var er error
 
 	if r.transport == nil {
-		if r.Proxy != nil {
-			ProxyUrl, err := url.Parse(r.Proxy)
+		if r.ProxyAddress != "" {
+			proxyUrl, err := url.Parse(r.ProxyAddress)
 			if err != nil {
 				return nil, &Error{Err: err}
 			}
-
-			r.transport = &http.Transport{Dial: dialer.Dial, Proxy: http.ProxyURL(proxyUrl)}
+			r.transport = &http.Transport{Proxy: http.ProxyURL(proxyUrl), Dial: dialer.Dial}
 		} else {
 			r.transport = &http.Transport{Dial: dialer.Dial}
 		}
