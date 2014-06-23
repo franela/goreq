@@ -183,6 +183,18 @@ var item Item
 res.Body.FromJsonTo(item)
 ```
 
+## Using Proxy servers
+
+GoReq supports HTTP proxies with no authentication or with Basic HTTP authentication.
+
+```go
+res, err := goreq.Request{ 
+    Uri: "http://www.google.com",
+    ProxyAddress: "http://myUser:aPassword@proxy.host.address:1234",
+}.Do()
+```
+
+
 TODO:
 -----
 

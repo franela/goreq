@@ -29,6 +29,7 @@ type Request struct {
 	UserAgent    string
 	Insecure     bool
 	MaxRedirects int
+	ProxyAddress string
 }
 
 type Response struct {
@@ -84,16 +85,15 @@ func paramParse(query interface{}) (string, error) {
 		t = reflect.TypeOf(query)
 	)
 
-
-        switch query.(type) {
-        case url.Values:
-                return query.(url.Values).Encode(), nil
-        default:
-                for i := 0; i < s.NumField(); i++ {
-                        v.Add(strings.ToLower(t.Field(i).Name), fmt.Sprintf("%v", s.Field(i).Interface()))
-                }
-                return v.Encode(), nil
-        }
+	switch query.(type) {
+	case url.Values:
+		return query.(url.Values).Encode(), nil
+	default:
+		for i := 0; i < s.NumField(); i++ {
+			v.Add(strings.ToLower(t.Field(i).Name), fmt.Sprintf("%v", s.Field(i).Interface()))
+		}
+		return v.Encode(), nil
+	}
 }
 
 func prepareRequestBody(b interface{}) (io.Reader, error) {
@@ -139,7 +139,18 @@ func (r Request) Do() (*Response, error) {
 	var er error
 
 	if r.transport == nil {
-		r.transport = &http.Transport{Dial: dialer.Dial}
+		// we want to set the proxy just once
+		if r.ProxyAddress != "" {
+			proxyUrl, err := url.Parse(r.ProxyAddress)
+			if err != nil {
+				// proxy address is in a wrong format
+				return nil, &Error{Err: err}
+			}
+			r.transport = &http.Transport{Proxy: http.ProxyURL(proxyUrl), Dial: dialer.Dial}
+		} else {
+			// if the proxy is not set, we should inherit from the environment!
+			r.transport = &http.Transport{Proxy: http.ProxyFromEnvironment, Dial: dialer.Dial}
+		}
 	}
 
 	if r.Insecure {
@@ -158,14 +169,14 @@ func (r Request) Do() (*Response, error) {
 		return nil, &Error{Err: e}
 	}
 
-  if r.QueryString != nil {
-    param, e := paramParse(r.QueryString)
-    if e != nil {
-      return nil, &Error{Err: e}
-    }
-    r.Uri = r.Uri + "?" + param
-  }
-  req, er = http.NewRequest(r.Method, r.Uri, b)
+	if r.QueryString != nil {
+		param, e := paramParse(r.QueryString)
+		if e != nil {
+			return nil, &Error{Err: e}
+		}
+		r.Uri = r.Uri + "?" + param
+	}
+	req, er = http.NewRequest(r.Method, r.Uri, b)
 
 	if er != nil {
 		// we couldn't parse the URL.
