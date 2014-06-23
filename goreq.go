@@ -148,7 +148,8 @@ func (r Request) Do() (*Response, error) {
 			}
 			r.transport = &http.Transport{Proxy: http.ProxyURL(proxyUrl), Dial: dialer.Dial}
 		} else {
-			r.transport = &http.Transport{Dial: dialer.Dial}
+			// if the proxy is not set, we should inherit from the environment!
+			r.transport = &http.Transport{Proxy: http.ProxyFromEnvironment, Dial: dialer.Dial}
 		}
 	}
 
