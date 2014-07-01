@@ -122,6 +122,8 @@ func newResponse(res *http.Response) *Response {
 }
 
 var dialer = &net.Dialer{Timeout: 1000 * time.Millisecond}
+var transport = &http.Transport{Dial: dialer.Dial}
+var	client = &http.Client{Transport: transport}
 
 func SetConnectTimeout(duration time.Duration) {
 	dialer.Timeout = duration
@@ -138,19 +140,20 @@ func (r Request) Do() (*Response, error) {
 	var req *http.Request
 	var er error
 
-	if r.transport == nil {
-		r.transport = &http.Transport{Dial: dialer.Dial}
-	}
+  //fmt.Println("transport: ", transport)
+	//if r.transport == nil {
+	//	r.transport = transport//&http.Transport{Dial: dialer.Dial}
+	//}
 
 	if r.Insecure {
-		r.transport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
-	} else if r.transport.TLSClientConfig != nil {
+		transport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+	} else if transport.TLSClientConfig != nil {
 		// the default TLS client (when transport.TLSClientConfig==nil) is
 		// already set to verify, so do nothing in that case
-		r.transport.TLSClientConfig.InsecureSkipVerify = false
+		transport.TLSClientConfig.InsecureSkipVerify = false
 	}
 
-	client := &http.Client{Transport: r.transport}
+	client := &http.Client{Transport: transport}
 	b, e := prepareRequestBody(r.Body)
 
 	if e != nil {
@@ -191,7 +194,7 @@ func (r Request) Do() (*Response, error) {
 	var timer *time.Timer
 	if r.Timeout > 0 {
 		timer = time.AfterFunc(r.Timeout, func() {
-			r.transport.CancelRequest(req)
+			transport.CancelRequest(req)
 			timeout = true
 		})
 	}
