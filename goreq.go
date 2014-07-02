@@ -16,7 +16,6 @@ import (
 )
 
 type Request struct {
-	transport    *http.Transport
 	headers      []headerTuple
 	Method       string
 	Uri          string
@@ -84,16 +83,15 @@ func paramParse(query interface{}) (string, error) {
 		t = reflect.TypeOf(query)
 	)
 
-
-        switch query.(type) {
-        case url.Values:
-                return query.(url.Values).Encode(), nil
-        default:
-                for i := 0; i < s.NumField(); i++ {
-                        v.Add(strings.ToLower(t.Field(i).Name), fmt.Sprintf("%v", s.Field(i).Interface()))
-                }
-                return v.Encode(), nil
-        }
+	switch query.(type) {
+	case url.Values:
+		return query.(url.Values).Encode(), nil
+	default:
+		for i := 0; i < s.NumField(); i++ {
+			v.Add(strings.ToLower(t.Field(i).Name), fmt.Sprintf("%v", s.Field(i).Interface()))
+		}
+		return v.Encode(), nil
+	}
 }
 
 func prepareRequestBody(b interface{}) (io.Reader, error) {
@@ -123,7 +121,7 @@ func newResponse(res *http.Response) *Response {
 
 var defaultDialer = &net.Dialer{Timeout: 1000 * time.Millisecond}
 var defaultTransport = &http.Transport{Dial: defaultDialer.Dial}
-var	defaultClient = &http.Client{Transport: defaultTransport}
+var defaultClient = &http.Client{Transport: defaultTransport}
 
 func SetConnectTimeout(duration time.Duration) {
 	defaultDialer.Timeout = duration
@@ -137,32 +135,16 @@ func (r *Request) AddHeader(name string, value string) {
 }
 
 func (r Request) Do() (*Response, error) {
-  var req *http.Request
-  var er error
-  var client *http.Client
-  var transport *http.Transport
-  customTransport := false
-
-  if r.transport != nil {
-    transport = r.transport
-    customTransport = true
-  } else {
-    transport = defaultTransport
-  }
+	var req *http.Request
+	var er error
 
 	if r.Insecure {
-		transport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
-	} else if transport.TLSClientConfig != nil {
+		defaultTransport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+	} else if defaultTransport.TLSClientConfig != nil {
 		// the default TLS client (when transport.TLSClientConfig==nil) is
 		// already set to verify, so do nothing in that case
-		transport.TLSClientConfig.InsecureSkipVerify = false
+		defaultTransport.TLSClientConfig.InsecureSkipVerify = false
 	}
-
-  if customTransport {
-    client = &http.Client{Transport: r.transport}
-  } else {
-    client = defaultClient
-  }
 
 	b, e := prepareRequestBody(r.Body)
 
@@ -204,12 +186,12 @@ func (r Request) Do() (*Response, error) {
 	var timer *time.Timer
 	if r.Timeout > 0 {
 		timer = time.AfterFunc(r.Timeout, func() {
-			transport.CancelRequest(req)
+			defaultTransport.CancelRequest(req)
 			timeout = true
 		})
 	}
 
-	res, err := client.Do(req)
+	res, err := defaultClient.Do(req)
 	if timer != nil {
 		timer.Stop()
 	}
