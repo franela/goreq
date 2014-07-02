@@ -153,14 +153,14 @@ func (r Request) Do() (*Response, error) {
 		return nil, &Error{Err: e}
 	}
 
-  if r.QueryString != nil {
-    param, e := paramParse(r.QueryString)
-    if e != nil {
-      return nil, &Error{Err: e}
-    }
-    r.Uri = r.Uri + "?" + param
-  }
-  req, er = http.NewRequest(r.Method, r.Uri, b)
+	if r.QueryString != nil {
+		param, e := paramParse(r.QueryString)
+		if e != nil {
+			return nil, &Error{Err: e}
+		}
+		r.Uri = r.Uri + "?" + param
+	}
+	req, er = http.NewRequest(r.Method, r.Uri, b)
 
 	if er != nil {
 		// we couldn't parse the URL.

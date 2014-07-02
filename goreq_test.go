@@ -225,9 +225,9 @@ func TestRequest(t *testing.T) {
 				g.It("Should do a POST with querystring", func() {
 					bdy := []byte{'f', 'o', 'o'}
 					res, err := Request{
-            Method: "POST",
+						Method:      "POST",
 						Uri:         ts.URL + "/getquery",
-            Body: bdy,
+						Body:        bdy,
 						QueryString: query,
 					}.Do()
 
