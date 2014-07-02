@@ -8,8 +8,8 @@ import (
 	"io/ioutil"
 	"math"
 	"net/http"
-	"net/url"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 	"time"
@@ -27,10 +27,10 @@ func TestRequest(t *testing.T) {
 		Skip:  5,
 	}
 
-        valuesQuery := url.Values{};
-        valuesQuery.Set("name", "marcos")
-        valuesQuery.Add("friend", "jonas")
-        valuesQuery.Add("friend", "peter")
+	valuesQuery := url.Values{}
+	valuesQuery.Set("name", "marcos")
+	valuesQuery.Add("friend", "jonas")
+	valuesQuery.Add("friend", "peter")
 
 	g := Goblin(t)
 
@@ -112,7 +112,6 @@ func TestRequest(t *testing.T) {
 					Expect(str).Should(Equal("/getquery?limit=3&skip=5"))
 					Expect(res.StatusCode).Should(Equal(200))
 				})
-
 
 				g.It("Should support url.Values in querystring", func() {
 					res, err := Request{
@@ -226,9 +225,9 @@ func TestRequest(t *testing.T) {
 				g.It("Should do a POST with querystring", func() {
 					bdy := []byte{'f', 'o', 'o'}
 					res, err := Request{
-            Method: "POST",
+						Method:      "POST",
 						Uri:         ts.URL + "/getquery",
-            Body: bdy,
+						Body:        bdy,
 						QueryString: query,
 					}.Do()
 
@@ -428,16 +427,14 @@ func TestRequest(t *testing.T) {
 				}))
 				defer ts.Close()
 
-				trans := &http.Transport{Dial: dialer.Dial}
 				req := Request{
-					transport: trans,
-					Insecure:  true,
-					Uri:       ts.URL,
-					Host:      "foobar.com",
+					Insecure: true,
+					Uri:      ts.URL,
+					Host:     "foobar.com",
 				}
 				res, _ := req.Do()
 
-				Expect(trans.TLSClientConfig.InsecureSkipVerify).Should(Equal(true))
+				Expect(defaultTransport.TLSClientConfig.InsecureSkipVerify).Should(Equal(true))
 				Expect(res.StatusCode).Should(Equal(200))
 			})
 		})
