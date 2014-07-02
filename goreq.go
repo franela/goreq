@@ -137,16 +137,16 @@ func (r *Request) AddHeader(name string, value string) {
 }
 
 func (r Request) Do() (*Response, error) {
-	var req *http.Request
-	var er error
+  var req *http.Request
+  var er error
   var client *http.Client
   var transport *http.Transport
   customTransport := false
 
-	if r.transport != nil {
+  if r.transport != nil {
     transport = r.transport
     customTransport = true
-	} else {
+  } else {
     transport = defaultTransport
   }
 
