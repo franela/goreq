@@ -121,12 +121,12 @@ func newResponse(res *http.Response) *Response {
 	return &Response{StatusCode: res.StatusCode, Header: res.Header, Body: Body{res.Body}}
 }
 
-var dialer = &net.Dialer{Timeout: 1000 * time.Millisecond}
-var transport = &http.Transport{Dial: dialer.Dial}
-var	client = &http.Client{Transport: transport}
+var defaultDialer = &net.Dialer{Timeout: 1000 * time.Millisecond}
+var defaultTransport = &http.Transport{Dial: defaultDialer.Dial}
+var	defaultClient = &http.Client{Transport: defaultTransport}
 
 func SetConnectTimeout(duration time.Duration) {
-	dialer.Timeout = duration
+	defaultDialer.Timeout = duration
 }
 
 func (r *Request) AddHeader(name string, value string) {
@@ -139,11 +139,16 @@ func (r *Request) AddHeader(name string, value string) {
 func (r Request) Do() (*Response, error) {
 	var req *http.Request
 	var er error
+  var client *http.Client
+  var transport *http.Transport
+  customTransport := false
 
-  //fmt.Println("transport: ", transport)
-	//if r.transport == nil {
-	//	r.transport = transport//&http.Transport{Dial: dialer.Dial}
-	//}
+	if r.transport != nil {
+    transport = r.transport
+    customTransport = true
+	} else {
+    transport = defaultTransport
+  }
 
 	if r.Insecure {
 		transport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
@@ -153,7 +158,12 @@ func (r Request) Do() (*Response, error) {
 		transport.TLSClientConfig.InsecureSkipVerify = false
 	}
 
-	client := &http.Client{Transport: transport}
+  if customTransport {
+    client = &http.Client{Transport: r.transport}
+  } else {
+    client = defaultClient
+  }
+
 	b, e := prepareRequestBody(r.Body)
 
 	if e != nil {

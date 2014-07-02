@@ -360,17 +360,32 @@ func TestRequest(t *testing.T) {
 				}))
 				defer ts.Close()
 
-				//trans := &http.Transport{Dial: dialer.Dial}
 				req := Request{
-					//transport: trans,
 					Insecure:  true,
 					Uri:       ts.URL,
 					Host:      "foobar.com",
 				}
 				res, _ := req.Do()
 
-        //fmt.Println("req: ", req, " transport: ", req.transport)
-				// Expect(req.transport.TLSClientConfig.InsecureSkipVerify).Should(Equal(true))
+				Expect(defaultTransport.TLSClientConfig.InsecureSkipVerify).Should(Equal(true))
+				Expect(res.StatusCode).Should(Equal(200))
+			})
+			g.It("Should allow to send custom transport", func() {
+				ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					w.WriteHeader(200)
+				}))
+				defer ts.Close()
+
+        trans := &http.Transport{Dial: defaultDialer.Dial}
+				req := Request{
+          transport: trans,
+					Insecure:  true,
+					Uri:       ts.URL,
+					Host:      "foobar.com",
+				}
+				res, _ := req.Do()
+
+				Expect(trans.TLSClientConfig.InsecureSkipVerify).Should(Equal(true))
 				Expect(res.StatusCode).Should(Equal(200))
 			})
 		})
