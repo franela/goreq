@@ -121,10 +121,12 @@ func newResponse(res *http.Response) *Response {
 	return &Response{StatusCode: res.StatusCode, Header: res.Header, Body: Body{res.Body}}
 }
 
-var dialer = &net.Dialer{Timeout: 1000 * time.Millisecond}
+var defaultDialer = &net.Dialer{Timeout: 1000 * time.Millisecond}
+var defaultTransport = &http.Transport{Dial: defaultDialer.Dial}
+var	defaultClient = &http.Client{Transport: defaultTransport}
 
 func SetConnectTimeout(duration time.Duration) {
-	dialer.Timeout = duration
+	defaultDialer.Timeout = duration
 }
 
 func (r *Request) AddHeader(name string, value string) {
@@ -135,22 +137,33 @@ func (r *Request) AddHeader(name string, value string) {
 }
 
 func (r Request) Do() (*Response, error) {
-	var req *http.Request
-	var er error
+  var req *http.Request
+  var er error
+  var client *http.Client
+  var transport *http.Transport
+  customTransport := false
 
-	if r.transport == nil {
-		r.transport = &http.Transport{Dial: dialer.Dial}
-	}
+  if r.transport != nil {
+    transport = r.transport
+    customTransport = true
+  } else {
+    transport = defaultTransport
+  }
 
 	if r.Insecure {
-		r.transport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
-	} else if r.transport.TLSClientConfig != nil {
+		transport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+	} else if transport.TLSClientConfig != nil {
 		// the default TLS client (when transport.TLSClientConfig==nil) is
 		// already set to verify, so do nothing in that case
-		r.transport.TLSClientConfig.InsecureSkipVerify = false
+		transport.TLSClientConfig.InsecureSkipVerify = false
 	}
 
-	client := &http.Client{Transport: r.transport}
+  if customTransport {
+    client = &http.Client{Transport: r.transport}
+  } else {
+    client = defaultClient
+  }
+
 	b, e := prepareRequestBody(r.Body)
 
 	if e != nil {
@@ -187,7 +200,7 @@ func (r Request) Do() (*Response, error) {
 	var timer *time.Timer
 	if r.Timeout > 0 {
 		timer = time.AfterFunc(r.Timeout, func() {
-			r.transport.CancelRequest(req)
+			transport.CancelRequest(req)
 			timeout = true
 		})
 	}
