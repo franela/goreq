@@ -101,6 +101,16 @@ func TestRequest(t *testing.T) {
 					Expect(res.StatusCode).Should(Equal(200))
 				})
 
+				g.It("Should return ContentLength", func() {
+					res, err := Request{Uri: ts.URL + "/foo"}.Do()
+
+					Expect(err).Should(BeNil())
+					str, _ := res.Body.ToString()
+					Expect(str).Should(Equal("bar"))
+					Expect(res.StatusCode).Should(Equal(200))
+					Expect(res.ContentLength).Should(Equal(int64(3)))
+				})
+
 				g.It("Should do a GET with querystring", func() {
 					res, err := Request{
 						Uri:         ts.URL + "/getquery",
