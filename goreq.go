@@ -31,9 +31,10 @@ type Request struct {
 }
 
 type Response struct {
-	StatusCode int
-	Body       Body
-	Header     http.Header
+	StatusCode    int
+	ContentLength int64
+	Body          Body
+	Header        http.Header
 }
 
 type headerTuple struct {
@@ -116,7 +117,7 @@ func prepareRequestBody(b interface{}) (io.Reader, error) {
 }
 
 func newResponse(res *http.Response) *Response {
-	return &Response{StatusCode: res.StatusCode, Header: res.Header, Body: Body{res.Body}}
+	return &Response{StatusCode: res.StatusCode, ContentLength: res.ContentLength, Header: res.Header, Body: Body{res.Body}}
 }
 
 var defaultDialer = &net.Dialer{Timeout: 1000 * time.Millisecond}
