@@ -180,7 +180,7 @@ type Item struct {
 
 var item Item
 
-res.Body.FromJsonTo(item)
+res.Body.FromJsonTo(&item)
 ```
 
 TODO:
