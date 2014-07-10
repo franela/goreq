@@ -106,6 +106,8 @@ func prepareRequestBody(b interface{}) (io.Reader, error) {
 	case []byte:
 		//treat as byte array
 		return bytes.NewReader(b.([]byte)), nil
+        case nil:
+                return nil, nil
 	default:
 		// try to jsonify it
 		j, err := json.Marshal(b)

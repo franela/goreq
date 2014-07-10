@@ -431,6 +431,18 @@ func TestRequest(t *testing.T) {
 
 				Expect(res.StatusCode).Should(Equal(200))
 			})
+
+			g.It("Should not create a body by defualt", func() {
+				ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+                                        b, _ :=ioutil.ReadAll(r.Body)
+                                        Expect(b).Should(HaveLen(0))
+					w.WriteHeader(200)
+				}))
+				defer ts.Close()
+
+				req := Request{Uri: ts.URL, Host: "foobar.com"}
+				req.Do()
+			})
 			g.It("Should change transport TLS config if Request.Insecure is set", func() {
 				ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					w.WriteHeader(200)
