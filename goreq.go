@@ -16,7 +16,7 @@ import (
 )
 
 type Request struct {
-	headers      []headerTuple
+	headers      [20]*headerTuple
 	Method       string
 	Uri          string
 	Body         interface{}
@@ -28,6 +28,7 @@ type Request struct {
 	UserAgent    string
 	Insecure     bool
 	MaxRedirects int
+        currHeader   int
 }
 
 type Response struct {
@@ -131,10 +132,7 @@ func SetConnectTimeout(duration time.Duration) {
 }
 
 func (r *Request) AddHeader(name string, value string) {
-	if r.headers == nil {
-		r.headers = []headerTuple{}
-	}
-	r.headers = append(r.headers, headerTuple{name: name, value: value})
+        r.headers[r.currHeader] = &headerTuple{name: name, value: value}
 }
 
 func (r Request) Do() (*Response, error) {
@@ -175,12 +173,11 @@ func (r Request) Do() (*Response, error) {
 	req.Header.Add("User-Agent", r.UserAgent)
 	req.Header.Add("Content-Type", r.ContentType)
 	req.Header.Add("Accept", r.Accept)
-	if r.headers != nil {
-		for _, header := range r.headers {
-			req.Header.Add(header.name, header.value)
-		}
-	}
-
+        for _, header := range r.headers {
+                if header != nil {
+                        req.Header.Add(header.name, header.value)
+                }
+        }
 	timeout := false
 	var timer *time.Timer
 	if r.Timeout > 0 {
