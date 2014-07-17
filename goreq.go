@@ -1,7 +1,9 @@
 package goreq
 
 import (
+	"bufio"
 	"bytes"
+	"compress/gzip"
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
@@ -28,6 +30,7 @@ type Request struct {
 	UserAgent    string
 	Insecure     bool
 	MaxRedirects int
+	Compressed   bool
 }
 
 type Response struct {
@@ -106,8 +109,8 @@ func prepareRequestBody(b interface{}) (io.Reader, error) {
 	case []byte:
 		//treat as byte array
 		return bytes.NewReader(b.([]byte)), nil
-        case nil:
-                return nil, nil
+	case nil:
+		return nil, nil
 	default:
 		// try to jsonify it
 		j, err := json.Marshal(b)
@@ -150,7 +153,6 @@ func (r Request) Do() (*Response, error) {
 	}
 
 	b, e := prepareRequestBody(r.Body)
-
 	if e != nil {
 		// there was a problem marshaling the body
 		return nil, &Error{Err: e}
@@ -163,7 +165,21 @@ func (r Request) Do() (*Response, error) {
 		}
 		r.Uri = r.Uri + "?" + param
 	}
-	req, er = http.NewRequest(r.Method, r.Uri, b)
+
+	if r.Compressed && b != nil {
+		gzipBuffer := bytes.NewBuffer([]byte{})
+		readBuffer := bufio.NewReader(b)
+		gzipWriter := gzip.NewWriter(gzipBuffer)
+		_, e = readBuffer.WriteTo(gzipWriter)
+		gzipWriter.Close()
+		if e != nil {
+			fmt.Println("error: ", e)
+			return nil, &Error{Err: e}
+		}
+		req, er = http.NewRequest(r.Method, r.Uri, gzipBuffer)
+	} else {
+		req, er = http.NewRequest(r.Method, r.Uri, b)
+	}
 
 	if er != nil {
 		// we couldn't parse the URL.
@@ -175,6 +191,10 @@ func (r Request) Do() (*Response, error) {
 	req.Header.Add("User-Agent", r.UserAgent)
 	req.Header.Add("Content-Type", r.ContentType)
 	req.Header.Add("Accept", r.Accept)
+	if r.Compressed {
+		req.Header.Add("Content-Encoding", "gzip")
+		req.Header.Add("Accept-Encoding", "gzip")
+	}
 	if r.headers != nil {
 		for _, header := range r.headers {
 			req.Header.Add(header.name, header.value)
@@ -209,6 +229,16 @@ func (r Request) Do() (*Response, error) {
 		return r.Do()
 	}
 
+	if r.Compressed && strings.Contains(res.Header.Get("Content-Encoding"), "gzip") {
+		gzipReader, err := gzip.NewReader(res.Body)
+		defer res.Body.Close()
+		if err != nil {
+			return nil, &Error{Err: err}
+		}
+		return &Response{StatusCode: res.StatusCode, ContentLength: res.ContentLength, Header: res.Header, Body: Body{gzipReader}}, nil
+	} else {
+		return &Response{StatusCode: res.StatusCode, ContentLength: res.ContentLength, Header: res.Header, Body: Body{res.Body}}, nil
+	}
 	return newResponse(res), nil
 }
 
