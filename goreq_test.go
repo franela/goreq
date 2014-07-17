@@ -1,6 +1,7 @@
 package goreq
 
 import (
+	"compress/gzip"
 	"fmt"
 	. "github.com/franela/goblin"
 	. "github.com/onsi/gomega"
@@ -82,6 +83,46 @@ func TestRequest(t *testing.T) {
 					}
 					if r.Method == "GET" && r.URL.Path == "/redirect_test/307" {
 						http.Redirect(w, r, "/getquery", 307)
+					}
+					if r.Method == "GET" && r.URL.Path == "/compressed" {
+						defer r.Body.Close()
+						b := "{\"foo\":\"bar\",\"fuu\":\"baz\"}"
+						gw := gzip.NewWriter(w)
+						defer gw.Close()
+						if r.Header.Get("Accept-Encoding") == "gzip" {
+							w.Header().Add("Content-Encoding", "gzip")
+						} else {
+							w.Header().Add("Content-Encoding", "")
+						}
+						w.WriteHeader(200)
+						gw.Write([]byte(b))
+					}
+					if r.Method == "GET" && r.URL.Path == "/compressed_and_return_compressed_without_header" {
+						defer r.Body.Close()
+						b := "{\"foo\":\"bar\",\"fuu\":\"baz\"}"
+						gw := gzip.NewWriter(w)
+						defer gw.Close()
+						w.WriteHeader(200)
+						gw.Write([]byte(b))
+					}
+					if r.Method == "POST" && r.URL.Path == "/compressed" && r.Header.Get("Content-Encoding") == "gzip" {
+						defer r.Body.Close()
+						gr, _ := gzip.NewReader(r.Body)
+						defer gr.Close()
+						b, _ := ioutil.ReadAll(gr)
+						w.WriteHeader(201)
+						w.Write(b)
+					}
+					if r.Method == "POST" && r.URL.Path == "/compressed_and_return_compressed" {
+						defer r.Body.Close()
+						w.Header().Add("Content-Encoding", "gzip")
+						w.WriteHeader(201)
+						io.Copy(w, r.Body)
+					}
+					if r.Method == "POST" && r.URL.Path == "/compressed_and_return_compressed_without_header" {
+						defer r.Body.Close()
+						w.WriteHeader(201)
+						io.Copy(w, r.Body)
 					}
 				}))
 			})
@@ -180,6 +221,28 @@ func TestRequest(t *testing.T) {
 					Expect(err).ShouldNot(BeNil())
 				})
 
+				g.It("Should return a gzip reader if Content-Encoding is 'gzip'", func() {
+					res, err := Request{Uri: ts.URL + "/compressed", Compressed: true}.Do()
+					b, _ := ioutil.ReadAll(res.Body)
+					Expect(err).Should(BeNil())
+					Expect(string(b)).Should(Equal("{\"foo\":\"bar\",\"fuu\":\"baz\"}"))
+				})
+
+				g.It("Should not return a gzip reader if Content-Encoding is not 'gzip'", func() {
+					res, err := Request{Uri: ts.URL + "/compressed_and_return_compressed_without_header", Compressed: true}.Do()
+					b, _ := ioutil.ReadAll(res.Body)
+					Expect(err).Should(BeNil())
+					Expect(string(b)).ShouldNot(Equal("{\"foo\":\"bar\",\"fuu\":\"baz\"}"))
+				})
+
+				g.It("Should return mantain default golang behaviour", func() {
+					//When not requesting gzipped content (Compressed: false), if server returns gzipped content it gets unzipped
+					res, err := Request{Uri: ts.URL + "/compressed"}.Do()
+					b, _ := ioutil.ReadAll(res.Body)
+					Expect(err).Should(BeNil())
+					Expect(string(b)).Should(Equal("{\"foo\":\"bar\",\"fuu\":\"baz\"}"))
+				})
+
 			})
 
 			g.Describe("POST", func() {
@@ -245,6 +308,36 @@ func TestRequest(t *testing.T) {
 					str, _ := res.Body.ToString()
 					Expect(str).Should(Equal("/getquery?limit=3&skip=5"))
 					Expect(res.StatusCode).Should(Equal(200))
+				})
+
+				g.It("Should send body as gzip if compressed", func() {
+					obj := map[string]string{"foo": "bar"}
+					res, err := Request{Method: "POST", Uri: ts.URL + "/compressed", Body: obj, Compressed: true}.Do()
+
+					Expect(err).Should(BeNil())
+					str, _ := res.Body.ToString()
+					Expect(str).Should(Equal(`{"foo":"bar"}`))
+					Expect(res.StatusCode).Should(Equal(201))
+				})
+
+				g.It("Should send body as gzip if compressed and parse return body", func() {
+					obj := map[string]string{"foo": "bar"}
+					res, err := Request{Method: "POST", Uri: ts.URL + "/compressed_and_return_compressed", Body: obj, Compressed: true}.Do()
+
+					Expect(err).Should(BeNil())
+					b, _ := ioutil.ReadAll(res.Body)
+					Expect(string(b)).Should(Equal(`{"foo":"bar"}`))
+					Expect(res.StatusCode).Should(Equal(201))
+				})
+
+				g.It("Should send body as gzip if compressed and not parse return body if header not set ", func() {
+					obj := map[string]string{"foo": "bar"}
+					res, err := Request{Method: "POST", Uri: ts.URL + "/compressed_and_return_compressed_without_header", Body: obj, Compressed: true}.Do()
+
+					Expect(err).Should(BeNil())
+					b, _ := ioutil.ReadAll(res.Body)
+					Expect(string(b)).ShouldNot(Equal(`{"foo":"bar"}`))
+					Expect(res.StatusCode).Should(Equal(201))
 				})
 			})
 
@@ -434,8 +527,8 @@ func TestRequest(t *testing.T) {
 
 			g.It("Should not create a body by defualt", func() {
 				ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-                                        b, _ :=ioutil.ReadAll(r.Body)
-                                        Expect(b).Should(HaveLen(0))
+					b, _ := ioutil.ReadAll(r.Body)
+					Expect(b).Should(HaveLen(0))
 					w.WriteHeader(200)
 				}))
 				defer ts.Close()
