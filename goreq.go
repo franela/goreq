@@ -121,10 +121,6 @@ func prepareRequestBody(b interface{}) (io.Reader, error) {
 	}
 }
 
-func newResponse(res *http.Response) *Response {
-	return &Response{StatusCode: res.StatusCode, ContentLength: res.ContentLength, Header: res.Header, Body: Body{res.Body}}
-}
-
 var defaultDialer = &net.Dialer{Timeout: 1000 * time.Millisecond}
 var defaultTransport = &http.Transport{Dial: defaultDialer.Dial}
 var defaultClient = &http.Client{Transport: defaultTransport}
@@ -239,7 +235,6 @@ func (r Request) Do() (*Response, error) {
 	} else {
 		return &Response{StatusCode: res.StatusCode, ContentLength: res.ContentLength, Header: res.Header, Body: Body{res.Body}}, nil
 	}
-	return newResponse(res), nil
 }
 
 func isRedirect(status int) bool {
