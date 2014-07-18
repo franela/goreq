@@ -136,7 +136,7 @@ func (r *Request) AddHeader(name string, value string) {
 	r.headers = append(r.headers, headerTuple{name: name, value: value})
 }
 
-func (r Request) Do() (*Response, error) {
+func (r Request) Do() (*Response, *Error) {
 	var req *http.Request
 	var er error
 
