@@ -3,6 +3,7 @@ package goreq
 import (
 	"bufio"
 	"bytes"
+	"compress/flate"
 	"compress/gzip"
 	"crypto/tls"
 	"encoding/json"
@@ -30,7 +31,7 @@ type Request struct {
 	UserAgent    string
 	Insecure     bool
 	MaxRedirects int
-	Compressed   bool
+	Compression  string
 }
 
 type Response struct {
@@ -46,7 +47,7 @@ type headerTuple struct {
 }
 
 type Body struct {
-	io.ReadCloser
+	io.Reader
 }
 
 type Error struct {
@@ -162,20 +163,36 @@ func (r Request) Do() (*Response, error) {
 		r.Uri = r.Uri + "?" + param
 	}
 
-	if r.Compressed && b != nil {
-		gzipBuffer := bytes.NewBuffer([]byte{})
-		readBuffer := bufio.NewReader(b)
-		gzipWriter := gzip.NewWriter(gzipBuffer)
-		_, e = readBuffer.WriteTo(gzipWriter)
-		gzipWriter.Close()
-		if e != nil {
-			fmt.Println("error: ", e)
-			return nil, &Error{Err: e}
+	var bodyReader io.Reader
+	if b != nil && r.Compression != "" {
+		switch r.Compression {
+		case "gzip":
+			gzipBuffer := bytes.NewBuffer([]byte{})
+			readBuffer := bufio.NewReader(b)
+			gzipWriter := gzip.NewWriter(gzipBuffer)
+			_, e = readBuffer.WriteTo(gzipWriter)
+			gzipWriter.Close()
+			if e != nil {
+				fmt.Println("error: ", e)
+				return nil, &Error{Err: e}
+			}
+			bodyReader = gzipBuffer
+		case "deflate":
+			flateBuffer := bytes.NewBuffer([]byte{})
+			readBuffer := bufio.NewReader(b)
+			flateWriter, _ := flate.NewWriter(flateBuffer, -1)
+			_, e = readBuffer.WriteTo(flateWriter)
+			flateWriter.Close()
+			if e != nil {
+				fmt.Println("error: ", e)
+				return nil, &Error{Err: e}
+			}
+			bodyReader = flateBuffer
 		}
-		req, er = http.NewRequest(r.Method, r.Uri, gzipBuffer)
 	} else {
-		req, er = http.NewRequest(r.Method, r.Uri, b)
+		bodyReader = b
 	}
+	req, er = http.NewRequest(r.Method, r.Uri, bodyReader)
 
 	if er != nil {
 		// we couldn't parse the URL.
@@ -187,10 +204,13 @@ func (r Request) Do() (*Response, error) {
 	req.Header.Add("User-Agent", r.UserAgent)
 	req.Header.Add("Content-Type", r.ContentType)
 	req.Header.Add("Accept", r.Accept)
-	if r.Compressed {
+	switch r.Compression {
+	case "gzip":
 		req.Header.Add("Content-Encoding", "gzip")
-		req.Header.Add("Accept-Encoding", "gzip")
+	case "deflate":
+		req.Header.Add("Content-Encoding", "deflate")
 	}
+	req.Header.Add("Accept-Encoding", "gzip,deflate")
 	if r.headers != nil {
 		for _, header := range r.headers {
 			req.Header.Add(header.name, header.value)
@@ -225,15 +245,23 @@ func (r Request) Do() (*Response, error) {
 		return r.Do()
 	}
 
-	if r.Compressed && strings.Contains(res.Header.Get("Content-Encoding"), "gzip") {
-		gzipReader, err := gzip.NewReader(res.Body)
-		defer res.Body.Close()
+	defer res.Body.Close()
+	buffer := bytes.NewBuffer([]byte{})
+	_, err = io.Copy(buffer, res.Body)
+	if err != nil {
+		return nil, &Error{Err: err}
+	}
+	if strings.Contains(res.Header.Get("Content-Encoding"), "deflate") {
+		flateReader := flate.NewReader(buffer)
+		return &Response{StatusCode: res.StatusCode, ContentLength: res.ContentLength, Header: res.Header, Body: Body{flateReader}}, nil
+	} else if strings.Contains(res.Header.Get("Content-Encoding"), "gzip") {
+		gzipReader, err := gzip.NewReader(buffer)
 		if err != nil {
 			return nil, &Error{Err: err}
 		}
 		return &Response{StatusCode: res.StatusCode, ContentLength: res.ContentLength, Header: res.Header, Body: Body{gzipReader}}, nil
 	} else {
-		return &Response{StatusCode: res.StatusCode, ContentLength: res.ContentLength, Header: res.Header, Body: Body{res.Body}}, nil
+		return &Response{StatusCode: res.StatusCode, ContentLength: res.ContentLength, Header: res.Header, Body: Body{buffer}}, nil
 	}
 }
 
