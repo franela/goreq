@@ -31,8 +31,14 @@ type Request struct {
 	UserAgent    string
 	Insecure     bool
 	MaxRedirects int
-	Compression  string
 	Proxy        string
+	Compression  *Compression
+}
+
+type Compression struct {
+	Writer          func(buffer io.Writer) (io.WriteCloser, error)
+	Reader          func(buffer io.Reader) (io.ReadCloser, error)
+	ContentEncoding string
 }
 
 type Response struct {
@@ -96,6 +102,26 @@ func (b *Body) ToString() (string, error) {
 		return "", err
 	}
 	return string(body), nil
+}
+
+func Gzip() *Compression {
+	reader := func(buffer io.Reader) (io.ReadCloser, error) {
+		return gzip.NewReader(buffer)
+	}
+	writer := func(buffer io.Writer) (io.WriteCloser, error) {
+		return gzip.NewWriter(buffer), nil
+	}
+	return &Compression{Writer: writer, Reader: reader, ContentEncoding: "gzip"}
+}
+
+func Deflate() *Compression {
+	reader := func(buffer io.Reader) (io.ReadCloser, error) {
+		return flate.NewReader(buffer), nil
+	}
+	writer := func(buffer io.Writer) (io.WriteCloser, error) {
+		return flate.NewWriter(buffer, -1)
+	}
+	return &Compression{Writer: writer, Reader: reader, ContentEncoding: "deflate"}
 }
 
 func paramParse(query interface{}) (string, error) {
@@ -199,31 +225,19 @@ func (r Request) Do() (*Response, error) {
 	}
 
 	var bodyReader io.Reader
-	if b != nil && r.Compression != "" {
-		switch r.Compression {
-		case "gzip":
-			gzipBuffer := bytes.NewBuffer([]byte{})
-			readBuffer := bufio.NewReader(b)
-			gzipWriter := gzip.NewWriter(gzipBuffer)
-			_, e = readBuffer.WriteTo(gzipWriter)
-			gzipWriter.Close()
-			if e != nil {
-				fmt.Println("error: ", e)
-				return nil, &Error{Err: e}
-			}
-			bodyReader = gzipBuffer
-		case "deflate":
-			flateBuffer := bytes.NewBuffer([]byte{})
-			readBuffer := bufio.NewReader(b)
-			flateWriter, _ := flate.NewWriter(flateBuffer, -1)
-			_, e = readBuffer.WriteTo(flateWriter)
-			flateWriter.Close()
-			if e != nil {
-				fmt.Println("error: ", e)
-				return nil, &Error{Err: e}
-			}
-			bodyReader = flateBuffer
+	if b != nil && r.Compression != nil {
+		buffer := bytes.NewBuffer([]byte{})
+		readBuffer := bufio.NewReader(b)
+		writer, err := r.Compression.Writer(buffer)
+		if err != nil {
+			return nil, &Error{Err: err}
 		}
+		_, e = readBuffer.WriteTo(writer)
+		writer.Close()
+		if e != nil {
+			return nil, &Error{Err: e}
+		}
+		bodyReader = buffer
 	} else {
 		bodyReader = b
 	}
@@ -239,13 +253,10 @@ func (r Request) Do() (*Response, error) {
 	req.Header.Add("User-Agent", r.UserAgent)
 	req.Header.Add("Content-Type", r.ContentType)
 	req.Header.Add("Accept", r.Accept)
-	switch r.Compression {
-	case "gzip":
-		req.Header.Add("Content-Encoding", "gzip")
-	case "deflate":
-		req.Header.Add("Content-Encoding", "deflate")
+	if r.Compression != nil {
+		req.Header.Add("Content-Encoding", r.Compression.ContentEncoding)
+		req.Header.Add("Accept-Encoding", r.Compression.ContentEncoding)
 	}
-	req.Header.Add("Accept-Encoding", "gzip,deflate")
 	if r.headers != nil {
 		for _, header := range r.headers {
 			req.Header.Add(header.name, header.value)
@@ -280,15 +291,12 @@ func (r Request) Do() (*Response, error) {
 		return r.Do()
 	}
 
-	if strings.Contains(res.Header.Get("Content-Encoding"), "deflate") {
-		flateReader := flate.NewReader(res.Body)
-		return &Response{StatusCode: res.StatusCode, ContentLength: res.ContentLength, Header: res.Header, Body: &Body{reader: res.Body, compressedReader: flateReader}}, nil
-	} else if strings.Contains(res.Header.Get("Content-Encoding"), "gzip") {
-		gzipReader, err := gzip.NewReader(res.Body)
+	if r.Compression != nil && strings.Contains(res.Header.Get("Content-Encoding"), r.Compression.ContentEncoding) {
+		compressedReader, err := r.Compression.Reader(res.Body)
 		if err != nil {
 			return nil, &Error{Err: err}
 		}
-		return &Response{StatusCode: res.StatusCode, ContentLength: res.ContentLength, Header: res.Header, Body: &Body{reader: res.Body, compressedReader: gzipReader}}, nil
+		return &Response{StatusCode: res.StatusCode, ContentLength: res.ContentLength, Header: res.Header, Body: &Body{reader: res.Body, compressedReader: compressedReader}}, nil
 	} else {
 		return &Response{StatusCode: res.StatusCode, ContentLength: res.ContentLength, Header: res.Header, Body: &Body{reader: res.Body}}, nil
 	}
