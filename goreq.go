@@ -37,7 +37,7 @@ type Request struct {
 type Response struct {
 	StatusCode    int
 	ContentLength int64
-	Body          Body
+	Body          *Body
 	Header        http.Header
 }
 
@@ -47,7 +47,8 @@ type headerTuple struct {
 }
 
 type Body struct {
-	io.Reader
+	Reader           io.ReadCloser
+	CompressedReader io.ReadCloser
 }
 
 type Error struct {
@@ -61,6 +62,21 @@ func (e *Error) Timeout() bool {
 
 func (e *Error) Error() string {
 	return e.Err.Error()
+}
+
+func (b *Body) Read(p []byte) (int, error) {
+	if b.CompressedReader != nil {
+		return b.CompressedReader.Read(p)
+	}
+	return b.Reader.Read(p)
+}
+
+func (b *Body) Close() error {
+	err := b.Reader.Close()
+	if b.CompressedReader != nil {
+		return b.CompressedReader.Close()
+	}
+	return err
 }
 
 func (b *Body) FromJsonTo(o interface{}) error {
@@ -245,23 +261,17 @@ func (r Request) Do() (*Response, error) {
 		return r.Do()
 	}
 
-	defer res.Body.Close()
-	buffer := bytes.NewBuffer([]byte{})
-	_, err = io.Copy(buffer, res.Body)
-	if err != nil {
-		return nil, &Error{Err: err}
-	}
 	if strings.Contains(res.Header.Get("Content-Encoding"), "deflate") {
-		flateReader := flate.NewReader(buffer)
-		return &Response{StatusCode: res.StatusCode, ContentLength: res.ContentLength, Header: res.Header, Body: Body{flateReader}}, nil
+		flateReader := flate.NewReader(res.Body)
+		return &Response{StatusCode: res.StatusCode, ContentLength: res.ContentLength, Header: res.Header, Body: &Body{Reader: res.Body, CompressedReader: flateReader}}, nil
 	} else if strings.Contains(res.Header.Get("Content-Encoding"), "gzip") {
-		gzipReader, err := gzip.NewReader(buffer)
+		gzipReader, err := gzip.NewReader(res.Body)
 		if err != nil {
 			return nil, &Error{Err: err}
 		}
-		return &Response{StatusCode: res.StatusCode, ContentLength: res.ContentLength, Header: res.Header, Body: Body{gzipReader}}, nil
+		return &Response{StatusCode: res.StatusCode, ContentLength: res.ContentLength, Header: res.Header, Body: &Body{Reader: res.Body, CompressedReader: gzipReader}}, nil
 	} else {
-		return &Response{StatusCode: res.StatusCode, ContentLength: res.ContentLength, Header: res.Header, Body: Body{buffer}}, nil
+		return &Response{StatusCode: res.StatusCode, ContentLength: res.ContentLength, Header: res.Header, Body: &Body{Reader: res.Body}}, nil
 	}
 }
 
