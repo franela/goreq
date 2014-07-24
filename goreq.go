@@ -3,6 +3,7 @@ package goreq
 import (
 	"bufio"
 	"bytes"
+	"compress/flate"
 	"compress/gzip"
 	"crypto/tls"
 	"encoding/json"
@@ -30,13 +31,13 @@ type Request struct {
 	UserAgent    string
 	Insecure     bool
 	MaxRedirects int
-	Compressed   bool
+	Compression  string
 }
 
 type Response struct {
 	StatusCode    int
 	ContentLength int64
-	Body          Body
+	Body          *Body
 	Header        http.Header
 }
 
@@ -46,7 +47,8 @@ type headerTuple struct {
 }
 
 type Body struct {
-	io.ReadCloser
+	reader           io.ReadCloser
+	compressedReader io.ReadCloser
 }
 
 type Error struct {
@@ -60,6 +62,21 @@ func (e *Error) Timeout() bool {
 
 func (e *Error) Error() string {
 	return e.Err.Error()
+}
+
+func (b *Body) Read(p []byte) (int, error) {
+	if b.compressedReader != nil {
+		return b.compressedReader.Read(p)
+	}
+	return b.reader.Read(p)
+}
+
+func (b *Body) Close() error {
+	err := b.reader.Close()
+	if b.compressedReader != nil {
+		return b.compressedReader.Close()
+	}
+	return err
 }
 
 func (b *Body) FromJsonTo(o interface{}) error {
@@ -162,20 +179,36 @@ func (r Request) Do() (*Response, error) {
 		r.Uri = r.Uri + "?" + param
 	}
 
-	if r.Compressed && b != nil {
-		gzipBuffer := bytes.NewBuffer([]byte{})
-		readBuffer := bufio.NewReader(b)
-		gzipWriter := gzip.NewWriter(gzipBuffer)
-		_, e = readBuffer.WriteTo(gzipWriter)
-		gzipWriter.Close()
-		if e != nil {
-			fmt.Println("error: ", e)
-			return nil, &Error{Err: e}
+	var bodyReader io.Reader
+	if b != nil && r.Compression != "" {
+		switch r.Compression {
+		case "gzip":
+			gzipBuffer := bytes.NewBuffer([]byte{})
+			readBuffer := bufio.NewReader(b)
+			gzipWriter := gzip.NewWriter(gzipBuffer)
+			_, e = readBuffer.WriteTo(gzipWriter)
+			gzipWriter.Close()
+			if e != nil {
+				fmt.Println("error: ", e)
+				return nil, &Error{Err: e}
+			}
+			bodyReader = gzipBuffer
+		case "deflate":
+			flateBuffer := bytes.NewBuffer([]byte{})
+			readBuffer := bufio.NewReader(b)
+			flateWriter, _ := flate.NewWriter(flateBuffer, -1)
+			_, e = readBuffer.WriteTo(flateWriter)
+			flateWriter.Close()
+			if e != nil {
+				fmt.Println("error: ", e)
+				return nil, &Error{Err: e}
+			}
+			bodyReader = flateBuffer
 		}
-		req, er = http.NewRequest(r.Method, r.Uri, gzipBuffer)
 	} else {
-		req, er = http.NewRequest(r.Method, r.Uri, b)
+		bodyReader = b
 	}
+	req, er = http.NewRequest(r.Method, r.Uri, bodyReader)
 
 	if er != nil {
 		// we couldn't parse the URL.
@@ -187,10 +220,13 @@ func (r Request) Do() (*Response, error) {
 	req.Header.Add("User-Agent", r.UserAgent)
 	req.Header.Add("Content-Type", r.ContentType)
 	req.Header.Add("Accept", r.Accept)
-	if r.Compressed {
+	switch r.Compression {
+	case "gzip":
 		req.Header.Add("Content-Encoding", "gzip")
-		req.Header.Add("Accept-Encoding", "gzip")
+	case "deflate":
+		req.Header.Add("Content-Encoding", "deflate")
 	}
+	req.Header.Add("Accept-Encoding", "gzip,deflate")
 	if r.headers != nil {
 		for _, header := range r.headers {
 			req.Header.Add(header.name, header.value)
@@ -225,15 +261,17 @@ func (r Request) Do() (*Response, error) {
 		return r.Do()
 	}
 
-	if r.Compressed && strings.Contains(res.Header.Get("Content-Encoding"), "gzip") {
+	if strings.Contains(res.Header.Get("Content-Encoding"), "deflate") {
+		flateReader := flate.NewReader(res.Body)
+		return &Response{StatusCode: res.StatusCode, ContentLength: res.ContentLength, Header: res.Header, Body: &Body{reader: res.Body, compressedReader: flateReader}}, nil
+	} else if strings.Contains(res.Header.Get("Content-Encoding"), "gzip") {
 		gzipReader, err := gzip.NewReader(res.Body)
-		defer res.Body.Close()
 		if err != nil {
 			return nil, &Error{Err: err}
 		}
-		return &Response{StatusCode: res.StatusCode, ContentLength: res.ContentLength, Header: res.Header, Body: Body{gzipReader}}, nil
+		return &Response{StatusCode: res.StatusCode, ContentLength: res.ContentLength, Header: res.Header, Body: &Body{reader: res.Body, compressedReader: gzipReader}}, nil
 	} else {
-		return &Response{StatusCode: res.StatusCode, ContentLength: res.ContentLength, Header: res.Header, Body: Body{res.Body}}, nil
+		return &Response{StatusCode: res.StatusCode, ContentLength: res.ContentLength, Header: res.Header, Body: &Body{reader: res.Body}}, nil
 	}
 }
 
