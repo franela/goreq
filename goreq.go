@@ -47,8 +47,8 @@ type headerTuple struct {
 }
 
 type Body struct {
-	Reader           io.ReadCloser
-	CompressedReader io.ReadCloser
+	reader           io.ReadCloser
+	compressedReader io.ReadCloser
 }
 
 type Error struct {
@@ -65,16 +65,16 @@ func (e *Error) Error() string {
 }
 
 func (b *Body) Read(p []byte) (int, error) {
-	if b.CompressedReader != nil {
-		return b.CompressedReader.Read(p)
+	if b.compressedReader != nil {
+		return b.compressedReader.Read(p)
 	}
-	return b.Reader.Read(p)
+	return b.reader.Read(p)
 }
 
 func (b *Body) Close() error {
-	err := b.Reader.Close()
-	if b.CompressedReader != nil {
-		return b.CompressedReader.Close()
+	err := b.reader.Close()
+	if b.compressedReader != nil {
+		return b.compressedReader.Close()
 	}
 	return err
 }
@@ -263,15 +263,15 @@ func (r Request) Do() (*Response, error) {
 
 	if strings.Contains(res.Header.Get("Content-Encoding"), "deflate") {
 		flateReader := flate.NewReader(res.Body)
-		return &Response{StatusCode: res.StatusCode, ContentLength: res.ContentLength, Header: res.Header, Body: &Body{Reader: res.Body, CompressedReader: flateReader}}, nil
+		return &Response{StatusCode: res.StatusCode, ContentLength: res.ContentLength, Header: res.Header, Body: &Body{reader: res.Body, compressedReader: flateReader}}, nil
 	} else if strings.Contains(res.Header.Get("Content-Encoding"), "gzip") {
 		gzipReader, err := gzip.NewReader(res.Body)
 		if err != nil {
 			return nil, &Error{Err: err}
 		}
-		return &Response{StatusCode: res.StatusCode, ContentLength: res.ContentLength, Header: res.Header, Body: &Body{Reader: res.Body, CompressedReader: gzipReader}}, nil
+		return &Response{StatusCode: res.StatusCode, ContentLength: res.ContentLength, Header: res.Header, Body: &Body{reader: res.Body, compressedReader: gzipReader}}, nil
 	} else {
-		return &Response{StatusCode: res.StatusCode, ContentLength: res.ContentLength, Header: res.Header, Body: &Body{Reader: res.Body}}, nil
+		return &Response{StatusCode: res.StatusCode, ContentLength: res.ContentLength, Header: res.Header, Body: &Body{reader: res.Body}}, nil
 	}
 }
 

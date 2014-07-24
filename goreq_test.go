@@ -262,7 +262,52 @@ func TestRequest(t *testing.T) {
 					res, err := Request{Uri: ts.URL + "/compressed", Compression: "gzip"}.Do()
 					b, _ := ioutil.ReadAll(res.Body)
 					Expect(err).Should(BeNil())
+					Expect(res.Body.compressedReader).ShouldNot(BeNil())
+					Expect(res.Body.reader).ShouldNot(BeNil())
 					Expect(string(b)).Should(Equal("{\"foo\":\"bar\",\"fuu\":\"baz\"}"))
+					Expect(res.Body.compressedReader).ShouldNot(BeNil())
+					Expect(res.Body.reader).ShouldNot(BeNil())
+				})
+
+				g.It("Should close reader and compresserReader on Body close", func() {
+					res, err := Request{Uri: ts.URL + "/compressed", Compression: "gzip"}.Do()
+					Expect(err).Should(BeNil())
+
+					_, e := ioutil.ReadAll(res.Body.reader)
+					Expect(e).Should(BeNil())
+					_, e = ioutil.ReadAll(res.Body.compressedReader)
+					Expect(e).Should(BeNil())
+
+					_, e = ioutil.ReadAll(res.Body.reader)
+					//when reading body again it doesnt error
+					Expect(e).Should(BeNil())
+
+					res.Body.Close()
+					_, e = ioutil.ReadAll(res.Body.reader)
+					//error because body is already closed
+					Expect(e).ShouldNot(BeNil())
+
+					_, e = ioutil.ReadAll(res.Body.compressedReader)
+					//compressedReaders dont error on reading when closed
+					Expect(e).Should(BeNil())
+				})
+
+				g.It("Should close reader and compresserReader on Body close", func() {
+					res, err := Request{Uri: ts.URL + "/compressed", Compression: "gzip"}.Do()
+					b, _ := ioutil.ReadAll(res.Body)
+					Expect(err).Should(BeNil())
+					Expect(string(b)).Should(Equal("{\"foo\":\"bar\",\"fuu\":\"baz\"}"))
+					Expect(res.Body.compressedReader).ShouldNot(BeNil())
+					Expect(res.Body.reader).ShouldNot(BeNil())
+					res.Body.Close()
+					b, e := ioutil.ReadAll(res.Body.reader)
+					//error because body is already closed
+					Expect(e).ShouldNot(BeNil())
+					b, e = ioutil.ReadAll(res.Body.compressedReader)
+					//compressedReaders dont error on reading when closed
+					Expect(e).Should(BeNil())
+					//Body is closed so we dont get anything back
+					Expect(string(b)).Should(Equal(""))
 				})
 
 				g.It("Should not return a gzip reader if Content-Encoding is not 'gzip'", func() {
