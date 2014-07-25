@@ -32,7 +32,7 @@ type Request struct {
 	Insecure     bool
 	MaxRedirects int
 	Compression  string
-  Proxy        string
+	Proxy        string
 }
 
 type Response struct {
@@ -159,22 +159,22 @@ func (r *Request) AddHeader(name string, value string) {
 func (r Request) Do() (*Response, error) {
 	var req *http.Request
 	var er error
-  var transport = defaultTransport
-  var client = defaultClient
+	var transport = defaultTransport
+	var client = defaultClient
 
-  if r.Proxy != "" {
-    proxyUrl, err := url.Parse(r.Proxy)
-    if err != nil {
-      // proxy address is in a wrong format
-      return nil, &Error{Err: err}
-    }
-    if proxyTransport == nil {
-      proxyTransport = &http.Transport{Dial: defaultDialer.Dial, Proxy: http.ProxyURL(proxyUrl)}
-      proxyClient = &http.Client{Transport: proxyTransport}
-    }
-    transport = proxyTransport
-    client = proxyClient
-  }
+	if r.Proxy != "" {
+		proxyUrl, err := url.Parse(r.Proxy)
+		if err != nil {
+			// proxy address is in a wrong format
+			return nil, &Error{Err: err}
+		}
+		if proxyTransport == nil {
+			proxyTransport = &http.Transport{Dial: defaultDialer.Dial, Proxy: http.ProxyURL(proxyUrl)}
+			proxyClient = &http.Client{Transport: proxyTransport}
+		}
+		transport = proxyTransport
+		client = proxyClient
+	}
 
 	if r.Insecure {
 		transport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
