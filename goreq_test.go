@@ -688,5 +688,34 @@ func TestRequest(t *testing.T) {
 				Expect(err).ShouldNot(BeNil())
 			})
 		})
+
+    g.Describe("Proxy", func() {
+			var ts *httptest.Server
+      var lastReq *http.Request
+      g.Before(func() {
+				ts = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					if r.Method == "GET" && r.URL.Path == "/" {
+            lastReq = r
+						w.Header().Add("x-forwarded-for", "test")
+						w.WriteHeader(200)
+            w.Write([]byte(""))
+					}
+				}))
+      })
+
+      g.After(func() {
+        ts.Close()
+      })
+
+      g.It("Should use Proxy", func () {
+        proxiedHost := "www.google.com"
+        res, err := Request{Uri: "http://" + proxiedHost, Proxy: ts.URL}.Do()
+        Expect(err).Should(BeNil())
+        Expect(res.Header.Get("x-forwarded-for")).Should(Equal("test"))
+        Expect(lastReq).ShouldNot(BeNil())
+        Expect(lastReq.Host).Should(Equal(proxiedHost))
+      })
+
+    })
 	})
 }
