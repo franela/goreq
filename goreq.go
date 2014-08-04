@@ -32,12 +32,12 @@ type Request struct {
 	Insecure     bool
 	MaxRedirects int
 	Proxy        string
-	Compression  *Compression
+	Compression  *compression
 }
 
-type Compression struct {
-	Writer          func(buffer io.Writer) (io.WriteCloser, error)
-	Reader          func(buffer io.Reader) (io.ReadCloser, error)
+type compression struct {
+	writer          func(buffer io.Writer) (io.WriteCloser, error)
+	reader          func(buffer io.Reader) (io.ReadCloser, error)
 	ContentEncoding string
 }
 
@@ -104,24 +104,24 @@ func (b *Body) ToString() (string, error) {
 	return string(body), nil
 }
 
-func Gzip() *Compression {
+func Gzip() *compression {
 	reader := func(buffer io.Reader) (io.ReadCloser, error) {
 		return gzip.NewReader(buffer)
 	}
 	writer := func(buffer io.Writer) (io.WriteCloser, error) {
 		return gzip.NewWriter(buffer), nil
 	}
-	return &Compression{Writer: writer, Reader: reader, ContentEncoding: "gzip"}
+	return &compression{writer: writer, reader: reader, ContentEncoding: "gzip"}
 }
 
-func Deflate() *Compression {
+func Deflate() *compression {
 	reader := func(buffer io.Reader) (io.ReadCloser, error) {
 		return flate.NewReader(buffer), nil
 	}
 	writer := func(buffer io.Writer) (io.WriteCloser, error) {
 		return flate.NewWriter(buffer, -1)
 	}
-	return &Compression{Writer: writer, Reader: reader, ContentEncoding: "deflate"}
+	return &compression{writer: writer, reader: reader, ContentEncoding: "deflate"}
 }
 
 func paramParse(query interface{}) (string, error) {
@@ -228,7 +228,7 @@ func (r Request) Do() (*Response, error) {
 	if b != nil && r.Compression != nil {
 		buffer := bytes.NewBuffer([]byte{})
 		readBuffer := bufio.NewReader(b)
-		writer, err := r.Compression.Writer(buffer)
+		writer, err := r.Compression.writer(buffer)
 		if err != nil {
 			return nil, &Error{Err: err}
 		}
@@ -292,7 +292,7 @@ func (r Request) Do() (*Response, error) {
 	}
 
 	if r.Compression != nil && strings.Contains(res.Header.Get("Content-Encoding"), r.Compression.ContentEncoding) {
-		compressedReader, err := r.Compression.Reader(res.Body)
+		compressedReader, err := r.Compression.reader(res.Body)
 		if err != nil {
 			return nil, &Error{Err: err}
 		}
