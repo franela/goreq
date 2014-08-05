@@ -703,6 +703,10 @@ func TestRequest(t *testing.T) {
 				}))
 			})
 
+			g.BeforeEach(func() {
+				lastReq = nil
+			})
+
 			g.After(func() {
 				ts.Close()
 			})
@@ -714,6 +718,16 @@ func TestRequest(t *testing.T) {
 				Expect(res.Header.Get("x-forwarded-for")).Should(Equal("test"))
 				Expect(lastReq).ShouldNot(BeNil())
 				Expect(lastReq.Host).Should(Equal(proxiedHost))
+			})
+
+			g.It("Should use Proxy authentication", func() {
+				proxiedHost := "www.google.com"
+				uri := strings.Replace(ts.URL, "http://", "http://user:pass@", -1)
+				res, err := Request{Uri: "http://" + proxiedHost, Proxy: uri}.Do()
+				Expect(err).Should(BeNil())
+				Expect(res.Header.Get("x-forwarded-for")).Should(Equal("test"))
+				Expect(lastReq).ShouldNot(BeNil())
+				Expect(lastReq.Header.Get("Proxy-Authorization")).Should(Equal("Basic dXNlcjpwYXNz"))
 			})
 
 		})
