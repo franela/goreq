@@ -89,9 +89,9 @@ type Item struct {
 
 item := Item{ Id: 1111, Name: "foobar" }
 
-res, err := goreq.Request{ 
-    Method: "POST", 
-    Uri: "http://www.google.com", 
+res, err := goreq.Request{
+    Method: "POST",
+    Uri: "http://www.google.com",
     Body: item,
 }.Do()
 ```
@@ -133,9 +133,9 @@ goreq.SetConnectTimeout(100 * time.Millisecond)
 And specify the request timeout doing:
 
 ```go
-res, err := goreq.Request{ 
+res, err := goreq.Request{
     Uri: "http://www.google.com",
-    Timeout: 500 * time.Millisecond, 
+    Timeout: 500 * time.Millisecond,
 }.Do()
 ```
 
@@ -221,6 +221,7 @@ res, err := goreq.Request{
 var item Item
 res.Body.FromJsonTo(&item)
 ```
+If no `Content-Encoding` header is replied by the server GoReq will return the crude response.
 
 TODO:
 -----
