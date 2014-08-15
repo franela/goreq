@@ -12,19 +12,21 @@ Simple and sane HTTP request library for Go language.
 - [Why GoReq?](#user-content-why-goreq)
 - [How do I install it?](#user-content-how-do-i-install-it)
 - [What can I do with it?](#user-content-what-can-i-do-with-it)
-        - [Making requests with different methods](#user-content-making-requests-with-different-methods)
-                        - [GET](#user-content-get)
-                        - [POST](#user-content-post)
-        - [Sending payloads in the Body](#user-content-sending-payloads-in-the-body)
-        - [Specifiying request headers](#user-content-specifiying-request-headers)
-        - [Setting timeouts](#user-content-setting-timeouts)
-        - [Using the Response and Error](#user-content-using-the-response-and-error)
-        - [Receiving JSON](#user-content-receiving-json)
-        - [Sending/Receiving Compressed Payloads](#user-content-sendingreceiving-compressed-payloads)
-                                - [Using gzip compression:](#user-content-using-gzip-compression)
-                                - [Using deflate compression:](#user-content-using-deflate-compression)
-                                - [Using compressed responses:](#user-content-using-compressed-responses)
-        - [TODO:](#user-content-todo)
+  - [Making requests with different methods](#user-content-making-requests-with-different-methods)
+  - [GET](#user-content-get)
+  - [POST](#user-content-post)
+    - [Sending payloads in the Body](#user-content-sending-payloads-in-the-body)
+  - [Specifiying request headers](#user-content-specifiying-request-headers)
+  - [Setting timeouts](#user-content-setting-timeouts)
+ - [Using the Response and Error](#user-content-using-the-response-and-error)
+ - [Receiving JSON](#user-content-receiving-json)
+ - [Sending/Receiving Compressed Payloads](#user-content-sendingreceiving-compressed-payloads)
+    - [Using gzip compression:](#user-content-using-gzip-compression)
+    - [Using deflate compression:](#user-content-using-deflate-compression)
+    - [Using compressed responses:](#user-content-using-compressed-responses)
+    - [Sending/Receiving Compressed Payloads](#user-content-sendingreceiving-compressed-payloads)
+ - [Proxy](#proxy)
+ - [TODO:](#user-content-todo)
 
 
 
@@ -246,6 +248,27 @@ var item Item
 res.Body.FromJsonTo(&item)
 ```
 If no `Content-Encoding` header is replied by the server GoReq will return the crude response.
+
+## Proxy
+If you need to use a proxy for your requests GoReq supports the standard `http_proxy` env variable as well as manually setting the proxy for each request
+
+```go
+res, err := goreq.Request{
+    Method: "GET",
+    Proxy: "http://myproxy:myproxyport",
+    Uri: "http://www.google.com",
+}.Do()
+```
+
+### Proxy basic auth is also supported
+
+```go
+res, err := goreq.Request{
+    Method: "GET",
+    Proxy: "http://user:pass@myproxy:myproxyport",
+    Uri: "http://www.google.com",
+}.Do()
+```
 
 TODO:
 -----
