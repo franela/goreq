@@ -89,9 +89,9 @@ type Item struct {
 
 item := Item{ Id: 1111, Name: "foobar" }
 
-res, err := goreq.Request{ 
-    Method: "POST", 
-    Uri: "http://www.google.com", 
+res, err := goreq.Request{
+    Method: "POST",
+    Uri: "http://www.google.com",
     Body: item,
 }.Do()
 ```
@@ -133,9 +133,9 @@ goreq.SetConnectTimeout(100 * time.Millisecond)
 And specify the request timeout doing:
 
 ```go
-res, err := goreq.Request{ 
+res, err := goreq.Request{
     Uri: "http://www.google.com",
-    Timeout: 500 * time.Millisecond, 
+    Timeout: 500 * time.Millisecond,
 }.Do()
 ```
 
@@ -167,6 +167,7 @@ res.Body // gives you access to the body
 res.Body.ToString() // will return the body as a string
 res.Header.Get("Content-Type") // gives you access to all the response headers
 ```
+Remember that you should **always** close `res.Body` if it's not `nil`
 
 ## Receiving JSON
 
@@ -182,6 +183,45 @@ var item Item
 
 res.Body.FromJsonTo(&item)
 ```
+
+## Sending/Receiving Compressed Payloads
+GoReq supports gzip and deflate compression of requests' body and transparent decompression of responses provided they have a correct `Content-Encoding` header.
+
+#####Using gzip compression:
+```go
+res, err := goreq.Request{
+    Method: "POST",
+    Uri: "http://www.google.com",
+    Body: item,
+    Compression: goreq.Gzip(),
+}.Do()
+```
+#####Using deflate compression:
+```go
+res, err := goreq.Request{
+    Method: "POST",
+    Uri: "http://www.google.com",
+    Body: item,
+    Compression: goreq.Deflate(),
+}.Do()
+```
+#####Using compressed responses:
+If servers replies a correct and matching `Content-Encoding` header (gzip requires `Content-Encoding: gzip` and deflate `Content-Encoding: deflate`) goreq transparently decompresses the response so the previous example should always work:
+```go
+type Item struct {
+    Id int
+    Name string
+}
+res, err := goreq.Request{
+    Method: "POST",
+    Uri: "http://www.google.com",
+    Body: item,
+    Compression: goreq.Gzip(),
+}.Do()
+var item Item
+res.Body.FromJsonTo(&item)
+```
+If no `Content-Encoding` header is replied by the server GoReq will return the crude response.
 
 TODO:
 -----
