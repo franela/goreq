@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"compress/flate"
 	"compress/gzip"
+	"compress/zlib"
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
@@ -120,6 +121,16 @@ func Deflate() *compression {
 	}
 	writer := func(buffer io.Writer) (io.WriteCloser, error) {
 		return flate.NewWriter(buffer, -1)
+	}
+	return &compression{writer: writer, reader: reader, ContentEncoding: "deflate"}
+}
+
+func Zlib() *compression {
+	reader := func(buffer io.Reader) (io.ReadCloser, error) {
+		return zlib.NewReader(buffer)
+	}
+	writer := func(buffer io.Writer) (io.WriteCloser, error) {
+		return zlib.NewWriter(buffer), nil
 	}
 	return &compression{writer: writer, reader: reader, ContentEncoding: "deflate"}
 }
