@@ -5,7 +5,7 @@ import (
 	"bytes"
 	"compress/flate"
 	"compress/gzip"
-  "compress/zlib"
+	"compress/zlib"
 	"crypto/tls"
 	"encoding/json"
 	"fmt"

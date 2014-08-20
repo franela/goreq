@@ -111,7 +111,7 @@ func TestRequest(t *testing.T) {
 					if r.Method == "GET" && r.URL.Path == "/compressed_zlib" {
 						defer r.Body.Close()
 						b := "{\"foo\":\"bar\",\"fuu\":\"baz\"}"
-						gw:= zlib.NewWriter(w)
+						gw := zlib.NewWriter(w)
 						defer gw.Close()
 						if strings.Contains(r.Header.Get("Content-Encoding"), "deflate") {
 							w.Header().Add("Content-Encoding", "deflate")
