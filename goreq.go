@@ -34,6 +34,9 @@ type Request struct {
 	MaxRedirects int
 	Proxy        string
 	Compression  *compression
+	UseBasicAuth bool
+	BasicAuthUsername string
+	BasicAuthPassword string
 }
 
 type compression struct {
@@ -274,6 +277,11 @@ func (r Request) Do() (*Response, error) {
 		for _, header := range r.headers {
 			req.Header.Add(header.name, header.value)
 		}
+	}
+
+	//use basic auth if required
+	if r.UseBasicAuth {
+		req.SetBasicAuth(r.BasicAuthUsername, r.BasicAuthPassword)
 	}
 
 	timeout := false
