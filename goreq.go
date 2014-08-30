@@ -20,20 +20,22 @@ import (
 )
 
 type Request struct {
-	headers      []headerTuple
-	Method       string
-	Uri          string
-	Body         interface{}
-	QueryString  interface{}
-	Timeout      time.Duration
-	ContentType  string
-	Accept       string
-	Host         string
-	UserAgent    string
-	Insecure     bool
-	MaxRedirects int
-	Proxy        string
-	Compression  *compression
+	headers           []headerTuple
+	Method            string
+	Uri               string
+	Body              interface{}
+	QueryString       interface{}
+	Timeout           time.Duration
+	ContentType       string
+	Accept            string
+	Host              string
+	UserAgent         string
+	Insecure          bool
+	MaxRedirects      int
+	Proxy             string
+	Compression       *compression
+	BasicAuthUsername string
+	BasicAuthPassword string
 }
 
 type compression struct {
@@ -274,6 +276,11 @@ func (r Request) Do() (*Response, error) {
 		for _, header := range r.headers {
 			req.Header.Add(header.name, header.value)
 		}
+	}
+
+	//use basic auth if required
+	if r.BasicAuthUsername != "" && r.BasicAuthPassword != "" {
+		req.SetBasicAuth(r.BasicAuthUsername, r.BasicAuthPassword)
 	}
 
 	timeout := false
