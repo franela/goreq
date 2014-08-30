@@ -20,21 +20,20 @@ import (
 )
 
 type Request struct {
-	headers      []headerTuple
-	Method       string
-	Uri          string
-	Body         interface{}
-	QueryString  interface{}
-	Timeout      time.Duration
-	ContentType  string
-	Accept       string
-	Host         string
-	UserAgent    string
-	Insecure     bool
-	MaxRedirects int
-	Proxy        string
-	Compression  *compression
-	UseBasicAuth bool
+	headers           []headerTuple
+	Method            string
+	Uri               string
+	Body              interface{}
+	QueryString       interface{}
+	Timeout           time.Duration
+	ContentType       string
+	Accept            string
+	Host              string
+	UserAgent         string
+	Insecure          bool
+	MaxRedirects      int
+	Proxy             string
+	Compression       *compression
 	BasicAuthUsername string
 	BasicAuthPassword string
 }
@@ -280,7 +279,7 @@ func (r Request) Do() (*Response, error) {
 	}
 
 	//use basic auth if required
-	if r.UseBasicAuth {
+	if r.BasicAuthUsername != "" && r.BasicAuthPassword != "" {
 		req.SetBasicAuth(r.BasicAuthUsername, r.BasicAuthPassword)
 	}
 

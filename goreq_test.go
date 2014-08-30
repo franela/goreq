@@ -4,6 +4,7 @@ import (
 	"compress/flate"
 	"compress/gzip"
 	"compress/zlib"
+	"encoding/base64"
 	"fmt"
 	. "github.com/franela/goblin"
 	. "github.com/onsi/gomega"
@@ -16,7 +17,6 @@ import (
 	"strings"
 	"testing"
 	"time"
-	"encoding/base64"
 )
 
 type Query struct {
@@ -818,7 +818,7 @@ func TestRequest(t *testing.T) {
 
 		g.Describe("BasicAuth", func() {
 			var ts *httptest.Server
-			
+
 			g.Before(func() {
 				ts = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					if r.URL.Path == "/basic_auth" {
@@ -841,27 +841,26 @@ func TestRequest(t *testing.T) {
 			})
 
 			g.It("Should support basic http authorization", func() {
-					res, err := Request{
-						Uri: ts.URL + "/basic_auth", 
-						UseBasicAuth: true,
-    					BasicAuthUsername: "username",
-						BasicAuthPassword: "password",
-					}.Do()
-					Expect(err).Should(BeNil())
-					str, _ := res.Body.ToString()
-					Expect(res.StatusCode).Should(Equal(200))
-					expectedStr := "Basic " + base64.StdEncoding.EncodeToString([]byte("username:password"))
-					Expect(str).Should(Equal(expectedStr))
+				res, err := Request{
+					Uri:               ts.URL + "/basic_auth",
+					BasicAuthUsername: "username",
+					BasicAuthPassword: "password",
+				}.Do()
+				Expect(err).Should(BeNil())
+				str, _ := res.Body.ToString()
+				Expect(res.StatusCode).Should(Equal(200))
+				expectedStr := "Basic " + base64.StdEncoding.EncodeToString([]byte("username:password"))
+				Expect(str).Should(Equal(expectedStr))
 			})
 
 			g.It("Should fail when basic http authorization is required and not provided", func() {
-					res, err := Request{
-						Uri: ts.URL + "/basic_auth", 
-					}.Do()
-					Expect(err).Should(BeNil())
-					str, _ := res.Body.ToString()
-					Expect(res.StatusCode).Should(Equal(401))
-					Expect(str).Should(Equal("private"))
+				res, err := Request{
+					Uri: ts.URL + "/basic_auth",
+				}.Do()
+				Expect(err).Should(BeNil())
+				str, _ := res.Body.ToString()
+				Expect(res.StatusCode).Should(Equal(401))
+				Expect(str).Should(Equal("private"))
 			})
 		})
 	})
