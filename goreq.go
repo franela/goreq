@@ -298,11 +298,17 @@ func (r Request) Do() (*Response, error) {
 	}
 
 	if err != nil {
-		if op, ok := err.(*url.Error); !timeout && ok {
-			if op1, ok := op.Err.(*net.OpError); ok {
-				timeout = op1.Timeout()
+		if !timeout {
+			switch err := err.(type) {
+			case *net.OpError:
+				timeout = err.Timeout()
+			case *url.Error:
+				if op, ok := err.Err.(*net.OpError); ok {
+					timeout = op.Timeout()
+				}
 			}
 		}
+
 		return nil, &Error{timeout: timeout, Err: err}
 	}
 
