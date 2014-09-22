@@ -658,6 +658,21 @@ func TestRequest(t *testing.T) {
 					Expect(res).Should(BeNil())
 					Expect(err.(*Error).Timeout()).Should(BeTrue())
 				})
+				g.It("Should connect timeout after a custom amount of time even with method set", func() {
+					SetConnectTimeout(100 * time.Millisecond)
+					start := time.Now()
+					request := Request{
+						Uri:    "http://10.255.255.1",
+						Method: "GET",
+					}
+					res, err := request.Do()
+					elapsed := time.Since(start)
+
+					Expect(elapsed).Should(BeNumerically("<", 150*time.Millisecond))
+					Expect(elapsed).Should(BeNumerically(">=", 100*time.Millisecond))
+					Expect(res).Should(BeNil())
+					Expect(err.(*Error).Timeout()).Should(BeTrue())
+				})
 			})
 
 			g.Describe("Request timeout", func() {
@@ -767,8 +782,7 @@ func TestRequest(t *testing.T) {
 				Expect(err).ShouldNot(BeNil())
 			})
 			g.It("Should handle DNS errors", func() {
-				_, err := Request{Uri: "http://*.localhost"}.Do()
-
+				_, err := Request{Uri: "http://.localhost"}.Do()
 				Expect(err).ShouldNot(BeNil())
 			})
 		})
