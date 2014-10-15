@@ -279,7 +279,7 @@ func (r Request) Do() (*Response, error) {
 	}
 
 	//use basic auth if required
-	if r.BasicAuthUsername != "" && r.BasicAuthPassword != "" {
+	if r.BasicAuthUsername != "" {
 		req.SetBasicAuth(r.BasicAuthUsername, r.BasicAuthPassword)
 	}
 
