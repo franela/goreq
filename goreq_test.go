@@ -837,14 +837,43 @@ func TestRequest(t *testing.T) {
 				ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					Expect(r.Header.Get("User-Agent")).ShouldNot(BeZero())
 					Expect(r.Host).Should(Equal("foobar.com"))
+					w.WriteHeader(200)
+				}))
+				defer ts.Close()
+				req := Request{Uri: ts.URL, Host: "foobar.com"}
+				res, err := req.Do()
+				Expect(err).ShouldNot(HaveOccurred())
+				Expect(res.StatusCode).Should(Equal(200))
+			})
+			g.It("Should be able to POST multipart forms", func() {
+				ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					Expect(r.Host).Should(Equal("foobar.com"))
+					Expect(r.Header.Get("Content-Type")).Should(Equal("multipart/mixed"))
+
+					b, _ := ioutil.ReadAll(r.Body)
+					Expect(b).ShouldNot(HaveLen(0))
 
 					w.WriteHeader(200)
 				}))
 				defer ts.Close()
 
-				req := Request{Uri: ts.URL, Host: "foobar.com"}
-				res, err := req.Do()
-				Expect(err).ShouldNot(HaveOccurred())
+				body := MultipartForm{
+					Params: map[string]string{
+						"something": "else",
+					},
+					Field:    "file",
+					FileName: "mything.txt",
+					Source:   strings.NewReader("fizzbuzz"),
+				}
+
+				req := Request{
+					Uri:         ts.URL,
+					Method:      "POST",
+					ContentType: "multipart/mixed",
+					Host:        "foobar.com",
+					Body:        body,
+				}
+				res, _ := req.Do()
 
 				Expect(res.StatusCode).Should(Equal(200))
 			})

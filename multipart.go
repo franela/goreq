@@ -22,6 +22,7 @@ import (
 //        Uri:          "http://some.place/uristuff",
 //        Method:       "POST",
 //        Body:         body,
+//        ContentType:  "multipart/mixed",
 //    }.Do()
 type MultipartForm struct {
 	Params   map[string]string
