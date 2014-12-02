@@ -204,6 +204,8 @@ func (r Request) Do() (*Response, error) {
 	var client = defaultClient
 	var redirectFailed bool
 
+	r.Method = valueOrDefault(r.Method, "GET")
+
 	client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
 		if len(via) > r.MaxRedirects {
 			redirectFailed = true
@@ -329,13 +331,6 @@ func (r Request) Do() (*Response, error) {
 		return response, &Error{timeout: timeout, Err: err}
 	}
 
-	if isRedirect(res.StatusCode) && r.MaxRedirects > 0 {
-		loc, _ := res.Location()
-		r.MaxRedirects--
-		r.Uri = loc.String()
-		return r.Do()
-	}
-
 	if r.Compression != nil && strings.Contains(res.Header.Get("Content-Encoding"), r.Compression.ContentEncoding) {
 		compressedReader, err := r.Compression.reader(res.Body)
 		if err != nil {
@@ -360,4 +355,12 @@ func isRedirect(status int) bool {
 	default:
 		return false
 	}
+}
+
+// Return value if nonempty, def otherwise.
+func valueOrDefault(value, def string) string {
+	if value != "" {
+		return value
+	}
+	return def
 }
