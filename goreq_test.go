@@ -6,8 +6,6 @@ import (
 	"compress/zlib"
 	"encoding/base64"
 	"fmt"
-	. "github.com/franela/goblin"
-	. "github.com/onsi/gomega"
 	"io"
 	"io/ioutil"
 	"math"
@@ -17,6 +15,9 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	. "github.com/franela/goblin"
+	. "github.com/onsi/gomega"
 )
 
 type Query struct {
@@ -603,12 +604,22 @@ func TestRequest(t *testing.T) {
 				})
 			})
 			g.Describe("Redirects", func() {
-				g.It("Should do not follow by default", func() {
+				g.It("Should not follow by default", func() {
 					res, _ := Request{
 						Uri: ts.URL + "/redirect_test/301",
 					}.Do()
 					Expect(res.StatusCode).Should(Equal(301))
 				})
+
+				g.It("Should not follow if method is explicitly specified", func() {
+					res, err := Request{
+						Method: "GET",
+						Uri:    ts.URL + "/redirect_test/301",
+					}.Do()
+					Expect(res.StatusCode).Should(Equal(301))
+					Expect(err).Should(HaveOccurred())
+				})
+
 				g.It("Should follow only specified number of MaxRedirects", func() {
 					res, _ := Request{
 						Uri:          ts.URL + "/redirect_test/301",

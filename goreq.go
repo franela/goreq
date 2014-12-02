@@ -8,6 +8,7 @@ import (
 	"compress/zlib"
 	"crypto/tls"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -181,6 +182,7 @@ func prepareRequestBody(b interface{}) (io.Reader, error) {
 var defaultDialer = &net.Dialer{Timeout: 1000 * time.Millisecond}
 var defaultTransport = &http.Transport{Dial: defaultDialer.Dial, Proxy: http.ProxyFromEnvironment}
 var defaultClient = &http.Client{Transport: defaultTransport}
+
 var proxyTransport *http.Transport
 var proxyClient *http.Client
 
@@ -200,6 +202,15 @@ func (r Request) Do() (*Response, error) {
 	var er error
 	var transport = defaultTransport
 	var client = defaultClient
+	var redirectFailed bool
+
+	client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
+		if len(via) > r.MaxRedirects {
+			redirectFailed = true
+			return errors.New("Error redirecting. MaxRedirects reached")
+		}
+		return nil
+	}
 
 	if r.Proxy != "" {
 		proxyUrl, err := url.Parse(r.Proxy)
@@ -309,7 +320,13 @@ func (r Request) Do() (*Response, error) {
 			}
 		}
 
-		return nil, &Error{timeout: timeout, Err: err}
+		var response *Response
+		//If redirect fails we still want to return response data
+		if redirectFailed {
+			response = &Response{StatusCode: res.StatusCode, ContentLength: res.ContentLength, Header: res.Header, Body: &Body{reader: res.Body}}
+		}
+
+		return response, &Error{timeout: timeout, Err: err}
 	}
 
 	if isRedirect(res.StatusCode) && r.MaxRedirects > 0 {
