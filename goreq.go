@@ -342,21 +342,6 @@ func (r Request) Do() (*Response, error) {
 	}
 }
 
-func isRedirect(status int) bool {
-	switch status {
-	case http.StatusMovedPermanently:
-		return true
-	case http.StatusFound:
-		return true
-	case http.StatusSeeOther:
-		return true
-	case http.StatusTemporaryRedirect:
-		return true
-	default:
-		return false
-	}
-}
-
 // Return value if nonempty, def otherwise.
 func valueOrDefault(value, def string) string {
 	if value != "" {
