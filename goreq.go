@@ -206,14 +206,6 @@ func (r Request) Do() (*Response, error) {
 
 	r.Method = valueOrDefault(r.Method, "GET")
 
-	client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
-		if len(via) > r.MaxRedirects {
-			redirectFailed = true
-			return errors.New("Error redirecting. MaxRedirects reached")
-		}
-		return nil
-	}
-
 	if r.Proxy != "" {
 		proxyUrl, err := url.Parse(r.Proxy)
 		if err != nil {
@@ -228,6 +220,14 @@ func (r Request) Do() (*Response, error) {
 		}
 		transport = proxyTransport
 		client = proxyClient
+	}
+
+	client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
+		if len(via) > r.MaxRedirects {
+			redirectFailed = true
+			return errors.New("Error redirecting. MaxRedirects reached")
+		}
+		return nil
 	}
 
 	if r.Insecure {

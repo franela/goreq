@@ -808,8 +808,11 @@ func TestRequest(t *testing.T) {
 						w.Header().Add("x-forwarded-for", "test")
 						w.WriteHeader(200)
 						w.Write([]byte(""))
+					} else if r.Method == "GET" && r.URL.Path == "/redirect_test/301" {
+						http.Redirect(w, r, "/", 301)
 					}
 				}))
+
 			})
 
 			g.BeforeEach(func() {
@@ -827,6 +830,12 @@ func TestRequest(t *testing.T) {
 				Expect(res.Header.Get("x-forwarded-for")).Should(Equal("test"))
 				Expect(lastReq).ShouldNot(BeNil())
 				Expect(lastReq.Host).Should(Equal(proxiedHost))
+			})
+
+			g.It("Should not redirect if MaxRedirects is not set", func() {
+				res, err := Request{Uri: ts.URL + "/redirect_test/301", Proxy: ts.URL}.Do()
+				Expect(err).Should(HaveOccurred())
+				Expect(res.StatusCode).Should(Equal(301))
 			})
 
 			g.It("Should use Proxy authentication", func() {
