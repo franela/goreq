@@ -33,6 +33,7 @@ type Request struct {
 	UserAgent         string
 	Insecure          bool
 	MaxRedirects      int
+	RedirectHeaders   bool
 	Proxy             string
 	Compression       *compression
 	BasicAuthUsername string
@@ -226,6 +227,14 @@ func (r Request) Do() (*Response, error) {
 		if len(via) > r.MaxRedirects {
 			redirectFailed = true
 			return errors.New("Error redirecting. MaxRedirects reached")
+		}
+
+		//By default Golang will not redirect request headers
+		// https://code.google.com/p/go/issues/detail?id=4800&q=request%20header
+		if r.RedirectHeaders {
+			for key, val := range via[0].Header {
+				req.Header[key] = val
+			}
 		}
 		return nil
 	}

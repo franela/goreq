@@ -45,9 +45,11 @@ func TestRequest(t *testing.T) {
 
 		g.Describe("General request methods", func() {
 			var ts *httptest.Server
+			var requestHeaders http.Header
 
 			g.Before(func() {
 				ts = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					requestHeaders = r.Header
 					if (r.Method == "GET" || r.Method == "OPTIONS" || r.Method == "TRACE" || r.Method == "PATCH" || r.Method == "FOOBAR") && r.URL.Path == "/foo" {
 						w.WriteHeader(200)
 						fmt.Fprint(w, "bar")
@@ -618,6 +620,19 @@ func TestRequest(t *testing.T) {
 					}.Do()
 					Expect(res.StatusCode).Should(Equal(301))
 					Expect(err).Should(HaveOccurred())
+				})
+
+				g.It("Should copy request headers headers when redirecting if specified", func() {
+					req := Request{
+						Method:          "GET",
+						Uri:             ts.URL + "/redirect_test/301",
+						MaxRedirects:    4,
+						RedirectHeaders: true,
+					}
+					req.AddHeader("Testheader", "TestValue")
+					res, _ := req.Do()
+					Expect(res.StatusCode).Should(Equal(200))
+					Expect(requestHeaders.Get("Testheader")).Should(Equal("TestValue"))
 				})
 
 				g.It("Should follow only specified number of MaxRedirects", func() {
