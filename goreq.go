@@ -155,13 +155,17 @@ func paramParse(query interface{}) (string, error) {
 			s = s.Elem()
 			t = s.Type()
 		}
-		for i := 0; i < t.NumField(); i++ {
-			if len(t.Field(i).PkgPath) > 0 {
-				continue
+		if t.Kind() == reflect.Struct {
+			for i := 0; i < t.NumField(); i++ {
+				if len(t.Field(i).PkgPath) > 0 {
+					continue
+				}
+				v.Add(strings.ToLower(t.Field(i).Name), fmt.Sprintf("%v", s.Field(i).Interface()))
 			}
-			v.Add(strings.ToLower(t.Field(i).Name), fmt.Sprintf("%v", s.Field(i).Interface()))
+			return v.Encode(), nil
+		} else {
+			return "", errors.New("Can not parse QueryString.")
 		}
-		return v.Encode(), nil
 	}
 }
 
