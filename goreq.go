@@ -157,7 +157,7 @@ func paramParse(query interface{}) (string, error) {
 		}
 		if t.Kind() == reflect.Struct {
 			for i := 0; i < t.NumField(); i++ {
-				if len(t.Field(i).PkgPath) > 0 {
+				if !s.Field(i).CanInterface() {
 					continue
 				}
 				v.Add(strings.ToLower(t.Field(i).Name), fmt.Sprintf("%v", s.Field(i).Interface()))
