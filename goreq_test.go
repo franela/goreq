@@ -934,35 +934,35 @@ func Test_paramParse(t *testing.T) {
 			values.Add("a", "1")
 			values.Add("b", "2")
 		})
-		g.It("Should accpet struct and ignores unexported field", func() {
+		g.It("Should accept struct and ignores unexported field", func() {
 			str, err := paramParse(form)
 			Expect(err).Should(BeNil())
 			Expect(str).Should(Equal(result))
 		})
-		g.It("Should accpet pointer of struct", func() {
+		g.It("Should accept pointer of struct", func() {
 			str, err := paramParse(&form)
 			Expect(err).Should(BeNil())
 			Expect(str).Should(Equal(result))
 		})
-		g.It("Should accpet recursive pointer of struct", func() {
+		g.It("Should accept recursive pointer of struct", func() {
 			f := &form
 			ff := &f
 			str, err := paramParse(ff)
 			Expect(err).Should(BeNil())
 			Expect(str).Should(Equal(result))
 		})
-		g.It("Should accpet interface{} which forcely converted by struct", func() {
+		g.It("Should accept interface{} which forcely converted by struct", func() {
 			str, err := paramParse(interface{}(&form))
 			Expect(err).Should(BeNil())
 			Expect(str).Should(Equal(result))
 		})
 
-		g.It("Should accpet url.Values", func() {
+		g.It("Should accept url.Values", func() {
 			str, err := paramParse(values)
 			Expect(err).Should(BeNil())
 			Expect(str).Should(Equal(result))
 		})
-		g.It("Should accpet &url.Values", func() {
+		g.It("Should accept &url.Values", func() {
 			str, err := paramParse(values)
 			Expect(err).Should(BeNil())
 			Expect(str).Should(Equal(result))
