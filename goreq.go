@@ -140,20 +140,32 @@ func Zlib() *compression {
 }
 
 func paramParse(query interface{}) (string, error) {
-	var (
-		v = &url.Values{}
-		s = reflect.ValueOf(query)
-		t = reflect.TypeOf(query)
-	)
-
 	switch query.(type) {
 	case url.Values:
 		return query.(url.Values).Encode(), nil
+	case *url.Values:
+		return query.(*url.Values).Encode(), nil
 	default:
-		for i := 0; i < s.NumField(); i++ {
-			v.Add(strings.ToLower(t.Field(i).Name), fmt.Sprintf("%v", s.Field(i).Interface()))
+		var (
+			v = &url.Values{}
+			s = reflect.ValueOf(query)
+			t = reflect.TypeOf(query)
+		)
+		for t.Kind() == reflect.Ptr || t.Kind() == reflect.Interface {
+			s = s.Elem()
+			t = s.Type()
 		}
-		return v.Encode(), nil
+		if t.Kind() == reflect.Struct {
+			for i := 0; i < t.NumField(); i++ {
+				if !s.Field(i).CanInterface() {
+					continue
+				}
+				v.Add(strings.ToLower(t.Field(i).Name), fmt.Sprintf("%v", s.Field(i).Interface()))
+			}
+			return v.Encode(), nil
+		} else {
+			return "", errors.New("Can not parse QueryString.")
+		}
 	}
 }
 

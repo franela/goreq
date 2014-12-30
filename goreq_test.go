@@ -914,3 +914,59 @@ func TestRequest(t *testing.T) {
 		})
 	})
 }
+
+func Test_paramParse(t *testing.T) {
+	type Form struct {
+		A string
+		B string
+		c string
+	}
+	g := Goblin(t)
+	RegisterFailHandler(func(m string, _ ...int) { g.Fail(m) })
+	var form = Form{}
+	var values = url.Values{}
+	const result = "a=1&b=2"
+	g.Describe("QueryString ParamParse", func() {
+		g.Before(func() {
+			form.A = "1"
+			form.B = "2"
+			form.c = "3"
+			values.Add("a", "1")
+			values.Add("b", "2")
+		})
+		g.It("Should accept struct and ignores unexported field", func() {
+			str, err := paramParse(form)
+			Expect(err).Should(BeNil())
+			Expect(str).Should(Equal(result))
+		})
+		g.It("Should accept pointer of struct", func() {
+			str, err := paramParse(&form)
+			Expect(err).Should(BeNil())
+			Expect(str).Should(Equal(result))
+		})
+		g.It("Should accept recursive pointer of struct", func() {
+			f := &form
+			ff := &f
+			str, err := paramParse(ff)
+			Expect(err).Should(BeNil())
+			Expect(str).Should(Equal(result))
+		})
+		g.It("Should accept interface{} which forcely converted by struct", func() {
+			str, err := paramParse(interface{}(&form))
+			Expect(err).Should(BeNil())
+			Expect(str).Should(Equal(result))
+		})
+
+		g.It("Should accept url.Values", func() {
+			str, err := paramParse(values)
+			Expect(err).Should(BeNil())
+			Expect(str).Should(Equal(result))
+		})
+		g.It("Should accept &url.Values", func() {
+			str, err := paramParse(values)
+			Expect(err).Should(BeNil())
+			Expect(str).Should(Equal(result))
+		})
+	})
+
+}
