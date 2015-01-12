@@ -299,9 +299,8 @@ func (r Request) Do() (*Response, error) {
 
 	// add headers to the request
 	req.Host = r.Host
-	req.Header.Add("User-Agent", r.UserAgent)
-	req.Header.Add("Content-Type", r.ContentType)
-	req.Header.Add("Accept", r.Accept)
+
+	r.addHeaders(req.Header)
 	if r.Compression != nil {
 		req.Header.Add("Content-Encoding", r.Compression.ContentEncoding)
 		req.Header.Add("Accept-Encoding", r.Compression.ContentEncoding)
@@ -361,6 +360,14 @@ func (r Request) Do() (*Response, error) {
 	} else {
 		return &Response{StatusCode: res.StatusCode, ContentLength: res.ContentLength, Header: res.Header, Body: &Body{reader: res.Body}}, nil
 	}
+}
+
+func (r Request) addHeaders(headersMap http.Header) {
+	if len(r.UserAgent) > 0 {
+		headersMap.Add("User-Agent", r.UserAgent)
+	}
+	headersMap.Add("Accept", r.Accept)
+	headersMap.Add("Content-Type", r.ContentType)
 }
 
 // Return value if nonempty, def otherwise.

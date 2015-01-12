@@ -750,6 +750,21 @@ func TestRequest(t *testing.T) {
 				Expect(res.StatusCode).Should(Equal(200))
 			})
 
+			g.It("Should set default golang user agent when not explicitly passed", func() {
+				ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					Expect(r.Header.Get("User-Agent")).Should(Equal("Go 1.1 package http"))
+					Expect(r.Host).Should(Equal("foobar.com"))
+
+					w.WriteHeader(200)
+				}))
+				defer ts.Close()
+
+				req := Request{Uri: ts.URL, Host: "foobar.com"}
+				res, _ := req.Do()
+
+				Expect(res.StatusCode).Should(Equal(200))
+			})
+
 			g.It("Should not create a body by defualt", func() {
 				ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					b, _ := ioutil.ReadAll(r.Body)
