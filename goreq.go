@@ -14,6 +14,7 @@ import (
 	"io/ioutil"
 	"net"
 	"net/http"
+	"net/http/httputil"
 	"net/url"
 	"reflect"
 	"strings"
@@ -38,6 +39,7 @@ type Request struct {
 	Compression       *compression
 	BasicAuthUsername string
 	BasicAuthPassword string
+	ShowDebug         bool
 }
 
 type compression struct {
@@ -325,6 +327,14 @@ func (r Request) Do() (*Response, error) {
 		})
 	}
 
+	if r.ShowDebug {
+		dump, err := httputil.DumpRequest(req, true)
+		if err != nil {
+			println(err.Error())
+		}
+		println(string(dump))
+	}
+
 	res, err := client.Do(req)
 	if timer != nil {
 		timer.Stop()
@@ -368,6 +378,10 @@ func (r Request) addHeaders(headersMap http.Header) {
 	}
 	headersMap.Add("Accept", r.Accept)
 	headersMap.Add("Content-Type", r.ContentType)
+}
+
+func (r Request) Debug(is_debug bool) {
+	r.ShowDebug = is_debug
 }
 
 // Return value if nonempty, def otherwise.
