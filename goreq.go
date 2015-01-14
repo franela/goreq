@@ -330,9 +330,9 @@ func (r Request) Do() (*Response, error) {
 	if r.ShowDebug {
 		dump, err := httputil.DumpRequest(req, true)
 		if err != nil {
-			println(err.Error())
+			fmt.Println(err.Error())
 		}
-		println(string(dump))
+		fmt.Println(string(dump))
 	}
 
 	res, err := client.Do(req)
@@ -378,10 +378,6 @@ func (r Request) addHeaders(headersMap http.Header) {
 	}
 	headersMap.Add("Accept", r.Accept)
 	headersMap.Add("Content-Type", r.ContentType)
-}
-
-func (r Request) Debug(is_debug bool) {
-	r.ShowDebug = is_debug
 }
 
 // Return value if nonempty, def otherwise.
