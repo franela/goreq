@@ -25,7 +25,7 @@ Simple and sane HTTP request library for Go language.
     - [Using deflate compression:](#user-content-using-deflate-compression)
     - [Using compressed responses:](#user-content-using-compressed-responses)
  - [Proxy](#proxy)
- - [Debug](#debug)
+ - [Debugging requests](#debug)
  - [TODO:](#user-content-todo)
 
 
