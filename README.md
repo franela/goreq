@@ -25,6 +25,7 @@ Simple and sane HTTP request library for Go language.
     - [Using deflate compression:](#user-content-using-deflate-compression)
     - [Using compressed responses:](#user-content-using-compressed-responses)
  - [Proxy](#proxy)
+ - [Debug](#debug)
  - [TODO:](#user-content-todo)
 
 
@@ -278,7 +279,7 @@ res, err := goreq.Request{
 }.Do()
 ```
 
-##Debug
+## Debug
 If you need to debug your http requests, it can print the http request detail.
 
 ```go
