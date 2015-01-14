@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"net"
 	"net/http"
 	"net/http/httputil"
@@ -330,9 +331,9 @@ func (r Request) Do() (*Response, error) {
 	if r.ShowDebug {
 		dump, err := httputil.DumpRequest(req, true)
 		if err != nil {
-			fmt.Println(err.Error())
+			log.Println(err)
 		}
-		fmt.Println(string(dump))
+		log.Println(string(dump))
 	}
 
 	res, err := client.Do(req)
