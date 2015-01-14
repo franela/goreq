@@ -278,6 +278,29 @@ res, err := goreq.Request{
 }.Do()
 ```
 
+##Debug
+If you need to debug your http requests, it can print the http request detail.
+
+```go
+res, err := goreq.Request{
+	Method:      "GET",
+	Uri:         "http://www.google.com",
+	Compression: goreq.Gzip(),
+	ShowDebug:   true,
+}.Do()
+fmt.Println(res, err)
+```
+
+and it will print the log:
+```
+GET / HTTP/1.1
+Host: www.google.com
+Accept:
+Accept-Encoding: gzip
+Content-Encoding: gzip
+Content-Type:
+```
+
 TODO:
 -----
 
