@@ -50,6 +50,7 @@ type compression struct {
 }
 
 type Response struct {
+	Uri           string
 	StatusCode    int
 	ContentLength int64
 	Body          *Body
@@ -218,6 +219,7 @@ func (r Request) Do() (*Response, error) {
 	var er error
 	var transport = defaultTransport
 	var client = defaultClient
+	var resUri string
 	var redirectFailed bool
 
 	r.Method = valueOrDefault(r.Method, "GET")
@@ -244,6 +246,8 @@ func (r Request) Do() (*Response, error) {
 			redirectFailed = true
 			return errors.New("Error redirecting. MaxRedirects reached")
 		}
+
+		resUri = req.URL.String()
 
 		//By default Golang will not redirect request headers
 		// https://code.google.com/p/go/issues/detail?id=4800&q=request%20header
@@ -357,7 +361,7 @@ func (r Request) Do() (*Response, error) {
 		var response *Response
 		//If redirect fails we still want to return response data
 		if redirectFailed {
-			response = &Response{StatusCode: res.StatusCode, ContentLength: res.ContentLength, Header: res.Header, Body: &Body{reader: res.Body}}
+			response = &Response{Uri: resUri, StatusCode: res.StatusCode, ContentLength: res.ContentLength, Header: res.Header, Body: &Body{reader: res.Body}}
 		}
 
 		//If redirect fails and we haven't set a redirect count we shouldn't return an error
@@ -373,9 +377,9 @@ func (r Request) Do() (*Response, error) {
 		if err != nil {
 			return nil, &Error{Err: err}
 		}
-		return &Response{StatusCode: res.StatusCode, ContentLength: res.ContentLength, Header: res.Header, Body: &Body{reader: res.Body, compressedReader: compressedReader}}, nil
+		return &Response{Uri: resUri, StatusCode: res.StatusCode, ContentLength: res.ContentLength, Header: res.Header, Body: &Body{reader: res.Body, compressedReader: compressedReader}}, nil
 	} else {
-		return &Response{StatusCode: res.StatusCode, ContentLength: res.ContentLength, Header: res.Header, Body: &Body{reader: res.Body}}, nil
+		return &Response{Uri: resUri, StatusCode: res.StatusCode, ContentLength: res.ContentLength, Header: res.Header, Body: &Body{reader: res.Body}}, nil
 	}
 }
 
