@@ -12,8 +12,10 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"net"
 	"net/http"
+	"net/http/httputil"
 	"net/url"
 	"reflect"
 	"strings"
@@ -38,6 +40,7 @@ type Request struct {
 	Compression       *compression
 	BasicAuthUsername string
 	BasicAuthPassword string
+	ShowDebug         bool
 }
 
 type compression struct {
@@ -324,6 +327,14 @@ func (r Request) Do() (*Response, error) {
 			transport.CancelRequest(req)
 			timeout = true
 		})
+	}
+
+	if r.ShowDebug {
+		dump, err := httputil.DumpRequest(req, true)
+		if err != nil {
+			log.Println(err)
+		}
+		log.Println(string(dump))
 	}
 
 	res, err := client.Do(req)

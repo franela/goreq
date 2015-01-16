@@ -25,6 +25,7 @@ Simple and sane HTTP request library for Go language.
     - [Using deflate compression:](#user-content-using-deflate-compression)
     - [Using compressed responses:](#user-content-using-compressed-responses)
  - [Proxy](#proxy)
+ - [Debugging requests](#debug)
  - [TODO:](#user-content-todo)
 
 
@@ -276,6 +277,29 @@ res, err := goreq.Request{
     Proxy: "http://user:pass@myproxy:myproxyport",
     Uri: "http://www.google.com",
 }.Do()
+```
+
+## Debug
+If you need to debug your http requests, it can print the http request detail.
+
+```go
+res, err := goreq.Request{
+	Method:      "GET",
+	Uri:         "http://www.google.com",
+	Compression: goreq.Gzip(),
+	ShowDebug:   true,
+}.Do()
+fmt.Println(res, err)
+```
+
+and it will print the log:
+```
+GET / HTTP/1.1
+Host: www.google.com
+Accept:
+Accept-Encoding: gzip
+Content-Encoding: gzip
+Content-Type:
 ```
 
 TODO:
