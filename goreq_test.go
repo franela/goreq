@@ -90,6 +90,9 @@ func TestRequest(t *testing.T) {
 					if r.Method == "GET" && r.URL.Path == "/redirect_test/307" {
 						http.Redirect(w, r, "/getquery", 307)
 					}
+					if r.Method == "GET" && r.URL.Path == "/redirect_test/destination" {
+						http.Redirect(w, r, ts.URL+"/destination", 301)
+					}
 					if r.Method == "GET" && r.URL.Path == "/compressed" {
 						defer r.Body.Close()
 						b := "{\"foo\":\"bar\",\"fuu\":\"baz\"}"
@@ -656,6 +659,14 @@ func TestRequest(t *testing.T) {
 						MaxRedirects: 4,
 					}.Do()
 					Expect(res.StatusCode).Should(Equal(200))
+				})
+
+				g.It("Should return final URL of the response when redirecting", func() {
+					res, _ := Request{
+						Uri:          ts.URL + "/redirect_test/destination",
+						MaxRedirects: 2,
+					}.Do()
+					Expect(res.Uri).Should(Equal(ts.URL + "/destination"))
 				})
 			})
 		})

@@ -188,7 +188,8 @@ return err
 If you don't get an error, you can safely use the ```Response```.
 
 ```go
-res.StatusCode //return the status code of the response
+res.Uri // return final URL location of the response (fulfilled after redirect was made)
+res.StatusCode // return the status code of the response
 res.Body // gives you access to the body
 res.Body.ToString() // will return the body as a string
 res.Header.Get("Content-Type") // gives you access to all the response headers
