@@ -619,6 +619,16 @@ func TestRequest(t *testing.T) {
 						Uri:    ts.URL + "/redirect_test/301",
 					}.Do()
 					Expect(res.StatusCode).Should(Equal(301))
+					Expect(err).ShouldNot(HaveOccurred())
+				})
+
+				g.It("Should throw an error if MaxRedirect limit is exceeded", func() {
+					res, err := Request{
+						Method:       "GET",
+						MaxRedirects: 1,
+						Uri:          ts.URL + "/redirect_test/301",
+					}.Do()
+					Expect(res.StatusCode).Should(Equal(302))
 					Expect(err).Should(HaveOccurred())
 				})
 
@@ -864,7 +874,7 @@ func TestRequest(t *testing.T) {
 
 			g.It("Should not redirect if MaxRedirects is not set", func() {
 				res, err := Request{Uri: ts.URL + "/redirect_test/301", Proxy: ts.URL}.Do()
-				Expect(err).Should(HaveOccurred())
+				Expect(err).ShouldNot(HaveOccurred())
 				Expect(res.StatusCode).Should(Equal(301))
 			})
 

@@ -236,6 +236,7 @@ func (r Request) Do() (*Response, error) {
 	}
 
 	client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
+
 		if len(via) > r.MaxRedirects {
 			redirectFailed = true
 			return errors.New("Error redirecting. MaxRedirects reached")
@@ -346,6 +347,11 @@ func (r Request) Do() (*Response, error) {
 		//If redirect fails we still want to return response data
 		if redirectFailed {
 			response = &Response{StatusCode: res.StatusCode, ContentLength: res.ContentLength, Header: res.Header, Body: &Body{reader: res.Body}}
+		}
+
+		//If redirect fails and we haven't set a redirect count we shouldn't return an error
+		if redirectFailed && r.MaxRedirects == 0 {
+			return response, nil
 		}
 
 		return response, &Error{timeout: timeout, Err: err}
