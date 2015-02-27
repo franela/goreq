@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"math"
 	"net/http"
+	"net/http/cookiejar"
 	"net/http/httptest"
 	"net/url"
 	"strings"
@@ -92,6 +93,16 @@ func TestRequest(t *testing.T) {
 					}
 					if r.Method == "GET" && r.URL.Path == "/redirect_test/destination" {
 						http.Redirect(w, r, ts.URL+"/destination", 301)
+					}
+					if r.Method == "GET" && r.URL.Path == "/getcookies" {
+						defer r.Body.Close()
+						w.WriteHeader(200)
+						fmt.Fprint(w, requestHeaders.Get("Cookie"))
+					}
+					if r.Method == "GET" && r.URL.Path == "/setcookies" {
+						defer r.Body.Close()
+						w.Header().Add("Set-Cookie", "foobar=42 ; Path=/")
+						w.WriteHeader(200)
 					}
 					if r.Method == "GET" && r.URL.Path == "/compressed" {
 						defer r.Body.Close()
@@ -373,6 +384,58 @@ func TestRequest(t *testing.T) {
 					Expect(string(b)).ShouldNot(Equal("{\"foo\":\"bar\",\"fuu\":\"baz\"}"))
 				})
 
+				g.It("Should send cookies", func() {
+					uri, err := url.Parse(ts.URL + "/getcookies")
+					Expect(err).Should(BeNil())
+
+					jar, err := cookiejar.New(nil)
+					Expect(err).Should(BeNil())
+
+					jar.SetCookies(uri, []*http.Cookie{
+						&http.Cookie{
+							Name:  "bar",
+							Value: "foo",
+							Path:  "/",
+						},
+					})
+
+					res, err := Request{
+						Uri:       ts.URL + "/getcookies",
+						CookieJar: jar,
+					}.Do()
+
+					Expect(err).Should(BeNil())
+					str, _ := res.Body.ToString()
+					Expect(str).Should(Equal("bar=foo"))
+					Expect(res.StatusCode).Should(Equal(200))
+					Expect(res.ContentLength).Should(Equal(int64(7)))
+				})
+
+				g.It("Should populate the cookiejar", func() {
+					uri, err := url.Parse(ts.URL + "/setcookies")
+					Expect(err).Should(BeNil())
+
+					jar, _ := cookiejar.New(nil)
+					Expect(err).Should(BeNil())
+
+					res, err := Request{
+						Uri:       ts.URL + "/setcookies",
+						CookieJar: jar,
+					}.Do()
+
+					Expect(err).Should(BeNil())
+
+					Expect(res.Header.Get("Set-Cookie")).Should(Equal("foobar=42 ; Path=/"))
+
+					cookies := jar.Cookies(uri)
+					Expect(len(cookies)).Should(Equal(1))
+
+					cookie := cookies[0]
+					Expect(*cookie).Should(Equal(http.Cookie{
+						Name:  "foobar",
+						Value: "42",
+					}))
+				})
 			})
 
 			g.Describe("POST", func() {

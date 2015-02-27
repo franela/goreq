@@ -40,6 +40,7 @@ type Request struct {
 	Compression       *compression
 	BasicAuthUsername string
 	BasicAuthPassword string
+	CookieJar         http.CookieJar
 	ShowDebug         bool
 }
 
@@ -223,6 +224,15 @@ func (r Request) Do() (*Response, error) {
 	var redirectFailed bool
 
 	r.Method = valueOrDefault(r.Method, "GET")
+
+	// use a client with a cookie jar if necessary. We create a new client not
+	// to modify the default one.
+	if r.CookieJar != nil {
+		client = &http.Client{
+			Transport: transport,
+			Jar:       r.CookieJar,
+		}
+	}
 
 	if r.Proxy != "" {
 		proxyUrl, err := url.Parse(r.Proxy)
