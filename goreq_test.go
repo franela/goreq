@@ -384,7 +384,7 @@ func TestRequest(t *testing.T) {
 					Expect(string(b)).ShouldNot(Equal("{\"foo\":\"bar\",\"fuu\":\"baz\"}"))
 				})
 
-				g.It("Should send cookies", func() {
+				g.It("Should send cookies from the cookiejar", func() {
 					uri, err := url.Parse(ts.URL + "/getcookies")
 					Expect(err).Should(BeNil())
 
@@ -409,6 +409,22 @@ func TestRequest(t *testing.T) {
 					Expect(str).Should(Equal("bar=foo"))
 					Expect(res.StatusCode).Should(Equal(200))
 					Expect(res.ContentLength).Should(Equal(int64(7)))
+				})
+
+				g.It("Should send cookies added with .AddCookie", func() {
+					c1 := &http.Cookie{Name: "c1", Value: "v1"}
+					c2 := &http.Cookie{Name: "c2", Value: "v2"}
+
+					req := Request{Uri: ts.URL + "/getcookies"}
+					req.AddCookie(c1)
+					req.AddCookie(c2)
+
+					res, err := req.Do()
+					Expect(err).Should(BeNil())
+					str, _ := res.Body.ToString()
+					Expect(str).Should(Equal("c1=v1; c2=v2"))
+					Expect(res.StatusCode).Should(Equal(200))
+					Expect(res.ContentLength).Should(Equal(int64(12)))
 				})
 
 				g.It("Should populate the cookiejar", func() {

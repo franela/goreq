@@ -24,6 +24,7 @@ import (
 
 type Request struct {
 	headers           []headerTuple
+	cookies           []*http.Cookie
 	Method            string
 	Uri               string
 	Body              interface{}
@@ -215,6 +216,10 @@ func (r *Request) AddHeader(name string, value string) {
 	r.headers = append(r.headers, headerTuple{name: name, value: value})
 }
 
+func (r *Request) AddCookie(c *http.Cookie) {
+	r.cookies = append(r.cookies, c)
+}
+
 func (r Request) Do() (*Response, error) {
 	var req *http.Request
 	var er error
@@ -332,6 +337,10 @@ func (r Request) Do() (*Response, error) {
 	//use basic auth if required
 	if r.BasicAuthUsername != "" {
 		req.SetBasicAuth(r.BasicAuthUsername, r.BasicAuthPassword)
+	}
+
+	for _, c := range r.cookies {
+		req.AddCookie(c)
 	}
 
 	timeout := false
