@@ -146,6 +146,25 @@ req.AddHeader("X-Custom", "somevalue")
 req.Do()
 ```
 
+Alternatively you can use the `WithHeader` function to keep the syntax short
+
+```go
+res, err = Request{ Uri: "http://www.google.com" }.WithHeader("X-Custom", "somevalue").Do()
+```
+
+## Cookie support
+
+Cookies can be either set at the request level by sending a [CookieJar](http://golang.org/pkg/net/http/cookiejar/) in the `CookieJar` request field
+or you can use goreq's one-liner WithCookie method as shown below
+
+```go
+res, err := Request{
+    Uri: "http://www.google.com",
+}.
+WithCookie("Name", "Value").
+Do()
+```
+
 ## Setting timeouts
 
 GoReq supports 2 kind of timeouts. A general connection timeout and a request specific one. By default the connection timeout is of 1 second. There is no default for request timeout, which means it will wait forever.
