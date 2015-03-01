@@ -427,6 +427,21 @@ func TestRequest(t *testing.T) {
 					Expect(res.ContentLength).Should(Equal(int64(12)))
 				})
 
+				g.It("Should send cookies added with .WithCookie", func() {
+					c1 := &http.Cookie{Name: "c1", Value: "v2"}
+					c2 := &http.Cookie{Name: "c2", Value: "v3"}
+
+					res, err := Request{Uri: ts.URL + "/getcookies"}.
+						WithCookie(c1).
+						WithCookie(c2).
+						Do()
+					Expect(err).Should(BeNil())
+					str, _ := res.Body.ToString()
+					Expect(str).Should(Equal("c1=v2; c2=v3"))
+					Expect(res.StatusCode).Should(Equal(200))
+					Expect(res.ContentLength).Should(Equal(int64(12)))
+				})
+
 				g.It("Should populate the cookiejar", func() {
 					uri, err := url.Parse(ts.URL + "/setcookies")
 					Expect(err).Should(BeNil())
@@ -838,6 +853,7 @@ func TestRequest(t *testing.T) {
 					Expect(r.Header.Get("Accept")).Should(Equal("application/json"))
 					Expect(r.Header.Get("Content-Type")).Should(Equal("application/json"))
 					Expect(r.Header.Get("X-Custom")).Should(Equal("foobar"))
+					Expect(r.Header.Get("X-Custom2")).Should(Equal("barfoo"))
 
 					w.WriteHeader(200)
 				}))
@@ -845,7 +861,7 @@ func TestRequest(t *testing.T) {
 
 				req := Request{Uri: ts.URL, Accept: "application/json", ContentType: "application/json", UserAgent: "foobaragent", Host: "foobar.com"}
 				req.AddHeader("X-Custom", "foobar")
-				res, _ := req.Do()
+				res, _ := req.WithHeader("X-Custom2", "barfoo").Do()
 
 				Expect(res.StatusCode).Should(Equal(200))
 			})

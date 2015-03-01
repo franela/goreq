@@ -216,8 +216,18 @@ func (r *Request) AddHeader(name string, value string) {
 	r.headers = append(r.headers, headerTuple{name: name, value: value})
 }
 
+func (r Request) WithHeader(name string, value string) Request {
+	r.AddHeader(name, value)
+	return r
+}
+
 func (r *Request) AddCookie(c *http.Cookie) {
 	r.cookies = append(r.cookies, c)
+}
+
+func (r Request) WithCookie(c *http.Cookie) Request {
+	r.AddCookie(c)
+	return r
 }
 
 func (r Request) Do() (*Response, error) {
