@@ -17,6 +17,7 @@ Simple and sane HTTP request library for Go language.
   - [POST](#user-content-post)
     - [Sending payloads in the Body](#user-content-sending-payloads-in-the-body)
   - [Specifiying request headers](#user-content-specifiying-request-headers)
+  - [Sending Cookies](#cookie-support)
   - [Setting timeouts](#user-content-setting-timeouts)
  - [Using the Response and Error](#user-content-using-the-response-and-error)
  - [Receiving JSON](#user-content-receiving-json)
