@@ -162,7 +162,7 @@ or you can use goreq's one-liner WithCookie method as shown below
 res, err := Request{
     Uri: "http://www.google.com",
 }.
-WithCookie("Name", "Value").
+WithCookie(&http.Cookie{Name: "c1", Value: "v1"}).
 Do()
 ```
 
