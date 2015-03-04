@@ -98,13 +98,7 @@ func (b *Body) Close() error {
 }
 
 func (b *Body) FromJsonTo(o interface{}) error {
-	if body, err := ioutil.ReadAll(b); err != nil {
-		return err
-	} else if err := json.Unmarshal(body, o); err != nil {
-		return err
-	}
-
-	return nil
+	return json.NewDecoder(b).Decode(o)
 }
 
 func (b *Body) ToString() (string, error) {
