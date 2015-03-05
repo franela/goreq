@@ -157,10 +157,22 @@ func paramParse(query interface{}) (string, error) {
 		}
 		if t.Kind() == reflect.Struct {
 			for i := 0; i < t.NumField(); i++ {
-				if !s.Field(i).CanInterface() {
+				var name string
+
+				field := s.Field(i)
+				typeField := t.Field(i)
+
+				if !field.CanInterface() {
 					continue
 				}
-				v.Add(strings.ToLower(t.Field(i).Name), fmt.Sprintf("%v", s.Field(i).Interface()))
+
+				if urlTag := typeField.Tag.Get("url"); urlTag != "" {
+					name = urlTag
+				} else {
+					name = strings.ToLower(typeField.Name)
+				}
+
+				v.Add(name, fmt.Sprintf("%v", field.Interface()))
 			}
 			return v.Encode(), nil
 		} else {
