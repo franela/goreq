@@ -1052,9 +1052,15 @@ func Test_paramParse(t *testing.T) {
 		B string
 		c string
 	}
+
+	type AnnotedForm struct {
+		Foo string `url:"foo_bar"`
+	}
+
 	g := Goblin(t)
 	RegisterFailHandler(func(m string, _ ...int) { g.Fail(m) })
 	var form = Form{}
+	var aform = AnnotedForm{}
 	var values = url.Values{}
 	const result = "a=1&b=2"
 	g.Describe("QueryString ParamParse", func() {
@@ -1062,6 +1068,7 @@ func Test_paramParse(t *testing.T) {
 			form.A = "1"
 			form.B = "2"
 			form.c = "3"
+			aform.Foo = "xyz"
 			values.Add("a", "1")
 			values.Add("b", "2")
 		})
@@ -1069,6 +1076,11 @@ func Test_paramParse(t *testing.T) {
 			str, err := paramParse(form)
 			Expect(err).Should(BeNil())
 			Expect(str).Should(Equal(result))
+		})
+		g.It("Should accept struct and use the field annotations", func() {
+			str, err := paramParse(aform)
+			Expect(err).Should(BeNil())
+			Expect(str).Should(Equal("foo_bar=xyz"))
 		})
 		g.It("Should accept pointer of struct", func() {
 			str, err := paramParse(&form)
