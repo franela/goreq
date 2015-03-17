@@ -172,7 +172,9 @@ func paramParse(query interface{}) (string, error) {
 					name = strings.ToLower(typeField.Name)
 				}
 
-				v.Add(name, fmt.Sprintf("%v", field.Interface()))
+				if val := fmt.Sprintf("%v", field.Interface()); len(val) > 0 {
+					v.Add(name, val)
+				}
 			}
 			return v.Encode(), nil
 		} else {
