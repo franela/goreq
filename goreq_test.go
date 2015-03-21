@@ -1054,7 +1054,10 @@ func Test_paramParse(t *testing.T) {
 	}
 
 	type AnnotedForm struct {
-		Foo string `url:"foo_bar"`
+		Foo  string `url:"foo_bar"`
+		Baz  string `url:"bad,omitempty"`
+		Norf string `url:"norf,omitempty"`
+		Qux  string `url:"-"`
 	}
 
 	g := Goblin(t)
@@ -1069,6 +1072,8 @@ func Test_paramParse(t *testing.T) {
 			form.B = "2"
 			form.c = "3"
 			aform.Foo = "xyz"
+			aform.Norf = "abc"
+			aform.Qux = "def"
 			values.Add("a", "1")
 			values.Add("b", "2")
 		})
@@ -1080,7 +1085,7 @@ func Test_paramParse(t *testing.T) {
 		g.It("Should accept struct and use the field annotations", func() {
 			str, err := paramParse(aform)
 			Expect(err).Should(BeNil())
-			Expect(str).Should(Equal("foo_bar=xyz"))
+			Expect(str).Should(Equal("foo_bar=xyz&norf=abc"))
 		})
 		g.It("Should accept pointer of struct", func() {
 			str, err := paramParse(&form)

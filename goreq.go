@@ -166,13 +166,26 @@ func paramParse(query interface{}) (string, error) {
 					continue
 				}
 
-				if urlTag := typeField.Tag.Get("url"); urlTag != "" {
-					name = urlTag
+				urlTag := typeField.Tag.Get("url")
+				if urlTag == "-" {
+					continue
+				}
+
+				var omitEmpty bool
+
+				if urlTag != "" {
+					tagName, opts := parseTag(urlTag)
+					name = tagName
+					omitEmpty = opts.Contains("omitempty")
+
 				} else {
 					name = strings.ToLower(typeField.Name)
 				}
 
-				v.Add(name, fmt.Sprintf("%v", field.Interface()))
+				if val := fmt.Sprintf("%v", field.Interface()); !(omitEmpty && len(val) == 0) {
+					v.Add(name, val)
+				}
+
 			}
 			return v.Encode(), nil
 		} else {

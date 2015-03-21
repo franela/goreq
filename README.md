@@ -79,18 +79,18 @@ res, err := goreq.Request{
 ```
 The sample above will send `http://localhost:3000/?limit=3&skip=5&fields=Value`
 
-Alternatively the `url` tag can be used in struct fields to define the parameter value to avoid forcing variable names
+Alternatively the `url` tag can be used in struct fields to customize encoding properties
 
 ```go
 type Item struct {
         TheLimit int `url:"the_limit"`
-        TheSkip int `url:"the_skip"`
-        TheFields string `url:"the_field"`
+        TheSkip string `url:"the_skip,omitempty"`
+        TheFields string `url:"-"`
 }
 
 item := Item {
         TheLimit: 3,
-        TheSkip: 5,
+        TheSkip: "",
         TheFields: "Value",
 }
 
@@ -99,7 +99,7 @@ res, err := goreq.Request{
         QueryString: item,
 }.Do()
 ```
-The sample above will send `http://localhost:3000/?the_limit=3&the_skip=5&the_field=Value`
+The sample above will send `http://localhost:3000/?the_limit=3`
 
 
 QueryString also support url.Values
