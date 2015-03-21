@@ -270,21 +270,6 @@ func TestRequest(t *testing.T) {
 					Expect(res.StatusCode).Should(Equal(200))
 				})
 
-				g.It("Should not send empty struct fields as querystring", func() {
-					query := struct {
-						Field string
-					}{}
-					res, err := Request{
-						Uri:         ts.URL + "/getquery",
-						QueryString: query,
-					}.Do()
-
-					Expect(err).Should(BeNil())
-					str, _ := res.Body.ToString()
-					Expect(str).Should(Equal("/getquery"))
-					Expect(res.StatusCode).Should(Equal(200))
-				})
-
 				g.It("Should support sending string body", func() {
 					res, err := Request{Uri: ts.URL + "/getbody", Body: "foo"}.Do()
 
