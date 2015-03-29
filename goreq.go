@@ -52,11 +52,10 @@ type compression struct {
 }
 
 type Response struct {
-	Uri           string
-	StatusCode    int
-	ContentLength int64
-	Body          *Body
-	Header        http.Header
+	*http.Response
+	Uri  string
+	Body *Body
+	Raw  *http.Response
 }
 
 type headerTuple struct {
@@ -409,7 +408,7 @@ func (r Request) Do() (*Response, error) {
 		var response *Response
 		//If redirect fails we still want to return response data
 		if redirectFailed {
-			response = &Response{Uri: resUri, StatusCode: res.StatusCode, ContentLength: res.ContentLength, Header: res.Header, Body: &Body{reader: res.Body}}
+			response = &Response{res, resUri, &Body{reader: res.Body}, res}
 		}
 
 		//If redirect fails and we haven't set a redirect count we shouldn't return an error
@@ -425,9 +424,9 @@ func (r Request) Do() (*Response, error) {
 		if err != nil {
 			return nil, &Error{Err: err}
 		}
-		return &Response{Uri: resUri, StatusCode: res.StatusCode, ContentLength: res.ContentLength, Header: res.Header, Body: &Body{reader: res.Body, compressedReader: compressedReader}}, nil
+		return &Response{res, resUri, &Body{reader: res.Body, compressedReader: compressedReader}, res}, nil
 	} else {
-		return &Response{Uri: resUri, StatusCode: res.StatusCode, ContentLength: res.ContentLength, Header: res.Header, Body: &Body{reader: res.Body}}, nil
+		return &Response{res, resUri, &Body{reader: res.Body}, res}, nil
 	}
 }
 

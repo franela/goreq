@@ -692,14 +692,10 @@ func TestRequest(t *testing.T) {
 					Expect(string(body)).Should(Equal("foo bar"))
 				})
 
-				g.It("Should handle parsing JSON", func() {
+				g.It("Should return the original request response", func() {
 					res, _ := Request{Method: "POST", Uri: ts.URL, Body: `{"foo": "bar"}`}.Do()
 
-					var foobar map[string]string
-
-					res.Body.FromJsonTo(&foobar)
-
-					Expect(foobar).Should(Equal(map[string]string{"foo": "bar"}))
+					Expect(res.Raw).ShouldNot(BeNil())
 				})
 			})
 			g.Describe("Redirects", func() {
