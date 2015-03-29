@@ -705,7 +705,7 @@ func TestRequest(t *testing.T) {
 				g.It("Should return the original request response", func() {
 					res, _ := Request{Method: "POST", Uri: ts.URL, Body: `{"foo": "bar"}`}.Do()
 
-					Expect(res.Raw).ShouldNot(BeNil())
+					Expect(res.Response).ShouldNot(BeNil())
 				})
 			})
 			g.Describe("Redirects", func() {
