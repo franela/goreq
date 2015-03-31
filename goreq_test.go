@@ -914,6 +914,16 @@ func TestRequest(t *testing.T) {
 				Expect(defaultTransport.TLSClientConfig.InsecureSkipVerify).Should(Equal(true))
 				Expect(res.StatusCode).Should(Equal(200))
 			})
+
+			g.It("GetRequest should return the underlying httpRequest ", func() {
+				req := Request{
+					Host: "foobar.com",
+				}
+
+				request, _ := req.NewRequest()
+				Expect(request).ShouldNot(BeNil())
+				Expect(request.Host).Should(Equal(req.Host))
+			})
 		})
 
 		g.Describe("Errors", func() {
