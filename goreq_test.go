@@ -331,6 +331,20 @@ func TestRequest(t *testing.T) {
 					Expect(string(b)).ShouldNot(Equal("{\"foo\":\"bar\",\"fuu\":\"baz\"}"))
 				})
 
+				g.It("Should return a deflate reader when using zlib if Content-Encoding is 'deflate'", func() {
+					res, err := Request{Uri: ts.URL + "/compressed_deflate", Compression: Zlib()}.Do()
+					b, _ := ioutil.ReadAll(res.Body)
+					Expect(err).Should(BeNil())
+					Expect(string(b)).Should(Equal("{\"foo\":\"bar\",\"fuu\":\"baz\"}"))
+				})
+
+				g.It("Should not return a delfate reader when using zlib if Content-Encoding is not 'deflate'", func() {
+					res, err := Request{Uri: ts.URL + "/compressed_deflate_and_return_compressed_without_header", Compression: Zlib()}.Do()
+					b, _ := ioutil.ReadAll(res.Body)
+					Expect(err).Should(BeNil())
+					Expect(string(b)).ShouldNot(Equal("{\"foo\":\"bar\",\"fuu\":\"baz\"}"))
+				})
+
 				g.It("Should send cookies from the cookiejar", func() {
 					uri, err := url.Parse(ts.URL + "/getcookies")
 					Expect(err).Should(BeNil())
@@ -501,6 +515,16 @@ func TestRequest(t *testing.T) {
 					Expect(res.StatusCode).Should(Equal(201))
 				})
 
+				g.It("Should send body as deflate using zlib if compressed", func() {
+					obj := map[string]string{"foo": "bar"}
+					res, err := Request{Method: "POST", Uri: ts.URL + "/compressed_deflate", Body: obj, Compression: Zlib()}.Do()
+
+					Expect(err).Should(BeNil())
+					str, _ := res.Body.ToString()
+					Expect(str).Should(Equal(`{"foo":"bar"}`))
+					Expect(res.StatusCode).Should(Equal(201))
+				})
+
 				g.It("Should send body as gzip if compressed and parse return body", func() {
 					obj := map[string]string{"foo": "bar"}
 					res, err := Request{Method: "POST", Uri: ts.URL + "/compressed_and_return_compressed", Body: obj, Compression: Gzip()}.Do()
@@ -521,6 +545,16 @@ func TestRequest(t *testing.T) {
 					Expect(res.StatusCode).Should(Equal(201))
 				})
 
+				g.It("Should send body as deflate using zlib if compressed and parse return body", func() {
+					obj := map[string]string{"foo": "bar"}
+					res, err := Request{Method: "POST", Uri: ts.URL + "/compressed_deflate_and_return_compressed", Body: obj, Compression: Zlib()}.Do()
+
+					Expect(err).Should(BeNil())
+					b, _ := ioutil.ReadAll(res.Body)
+					Expect(string(b)).Should(Equal(`{"foo":"bar"}`))
+					Expect(res.StatusCode).Should(Equal(201))
+				})
+
 				g.It("Should send body as gzip if compressed and not parse return body if header not set ", func() {
 					obj := map[string]string{"foo": "bar"}
 					res, err := Request{Method: "POST", Uri: ts.URL + "/compressed_and_return_compressed_without_header", Body: obj, Compression: Gzip()}.Do()
@@ -534,6 +568,16 @@ func TestRequest(t *testing.T) {
 				g.It("Should send body as deflate if compressed and not parse return body if header not set ", func() {
 					obj := map[string]string{"foo": "bar"}
 					res, err := Request{Method: "POST", Uri: ts.URL + "/compressed_deflate_and_return_compressed_without_header", Body: obj, Compression: Deflate()}.Do()
+
+					Expect(err).Should(BeNil())
+					b, _ := ioutil.ReadAll(res.Body)
+					Expect(string(b)).ShouldNot(Equal(`{"foo":"bar"}`))
+					Expect(res.StatusCode).Should(Equal(201))
+				})
+
+				g.It("Should send body as deflate using zlib if compressed and not parse return body if header not set ", func() {
+					obj := map[string]string{"foo": "bar"}
+					res, err := Request{Method: "POST", Uri: ts.URL + "/compressed_deflate_and_return_compressed_without_header", Body: obj, Compression: Zlib()}.Do()
 
 					Expect(err).Should(BeNil())
 					b, _ := ioutil.ReadAll(res.Body)

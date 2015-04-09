@@ -265,22 +265,13 @@ res, err := goreq.Request{
     Compression: goreq.Gzip(),
 }.Do()
 ```
-#####Using deflate compression:
+#####Using deflate/zlib compression:
 ```go
 res, err := goreq.Request{
     Method: "POST",
     Uri: "http://www.google.com",
     Body: item,
     Compression: goreq.Deflate(),
-}.Do()
-```
-#####Using zlib compression:
-```go
-res, err := goreq.Request{
-    Method: "POST",
-    Uri: "http://www.google.com",
-    Body: item,
-    Compression: goreq.Zlib(),
 }.Do()
 ```
 #####Using compressed responses:

@@ -128,6 +128,10 @@ func Deflate() *compression {
 	return &compression{writer: writer, reader: reader, ContentEncoding: "deflate"}
 }
 
+func Zlib() *compression {
+	return Deflate()
+}
+
 func paramParse(query interface{}) (string, error) {
 	switch query.(type) {
 	case url.Values:
