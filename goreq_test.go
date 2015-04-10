@@ -662,6 +662,12 @@ func TestRequest(t *testing.T) {
 
 					Expect(foobar).Should(Equal(map[string]string{"foo": "bar"}))
 				})
+
+				g.It("Should return the original request response", func() {
+					res, _ := Request{Method: "POST", Uri: ts.URL, Body: `{"foo": "bar"}`}.Do()
+
+					Expect(res.Response).ShouldNot(BeNil())
+				})
 			})
 			g.Describe("Redirects", func() {
 				g.It("Should not follow by default", func() {
@@ -868,6 +874,16 @@ func TestRequest(t *testing.T) {
 
 				Expect(defaultTransport.TLSClientConfig.InsecureSkipVerify).Should(Equal(true))
 				Expect(res.StatusCode).Should(Equal(200))
+			})
+
+			g.It("GetRequest should return the underlying httpRequest ", func() {
+				req := Request{
+					Host: "foobar.com",
+				}
+
+				request, _ := req.NewRequest()
+				Expect(request).ShouldNot(BeNil())
+				Expect(request.Host).Should(Equal(req.Host))
 			})
 		})
 

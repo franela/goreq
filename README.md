@@ -27,6 +27,7 @@ Simple and sane HTTP request library for Go language.
     - [Using compressed responses:](#user-content-using-compressed-responses)
  - [Proxy](#proxy)
  - [Debugging requests](#debug)
+     - [Getting raw Request & Response](#getting-raw-request--response)
  - [TODO:](#user-content-todo)
 
 
@@ -335,6 +336,39 @@ Accept-Encoding: gzip
 Content-Encoding: gzip
 Content-Type:
 ```
+
+
+### Getting raw Request & Response 
+
+To get the Request:
+
+```go
+req := Request{
+        Host: "foobar.com",
+}
+
+//req.Request will return a new instance of an http.Request so you can safely use it for something else
+request, _ := req.NewRequest()
+
+```
+
+
+To get the Response:
+
+```go
+res, err := goreq.Request{
+	Method:      "GET",
+	Uri:         "http://www.google.com",
+	Compression: goreq.Gzip(),
+	ShowDebug:   true,
+}.Do()
+
+// res.Response will contain the original http.Response structure 
+fmt.Println(res.Response, err)
+```
+
+
+
 
 TODO:
 -----
