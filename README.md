@@ -151,7 +151,7 @@ res, err := goreq.Request{
 We think that most of the times the request headers that you use are: ```Host```, ```Content-Type```, ```Accept``` and ```User-Agent```. This is why we decided to make it very easy to set these headers.
 
 ```go
-res, err := Request{
+res, err := goreq.Request{
     Uri: "http://www.google.com",
     Host: "foobar.com",
     Accept: "application/json",
@@ -163,7 +163,7 @@ res, err := Request{
 But sometimes you need to set other headers. You can still do it.
 
 ```go
-req := Request{ Uri: "http://www.google.com" }
+req := goreq.Request{ Uri: "http://www.google.com" }
 
 req.AddHeader("X-Custom", "somevalue")
 
@@ -173,7 +173,7 @@ req.Do()
 Alternatively you can use the `WithHeader` function to keep the syntax short
 
 ```go
-res, err = Request{ Uri: "http://www.google.com" }.WithHeader("X-Custom", "somevalue").Do()
+res, err = goreq.Request{ Uri: "http://www.google.com" }.WithHeader("X-Custom", "somevalue").Do()
 ```
 
 ## Cookie support
@@ -182,7 +182,7 @@ Cookies can be either set at the request level by sending a [CookieJar](http://g
 or you can use goreq's one-liner WithCookie method as shown below
 
 ```go
-res, err := Request{
+res, err := goreq.Request{
     Uri: "http://www.google.com",
 }.
 WithCookie(&http.Cookie{Name: "c1", Value: "v1"}).
@@ -343,7 +343,7 @@ Content-Type:
 To get the Request:
 
 ```go
-req := Request{
+req := goreq.Request{
         Host: "foobar.com",
 }
 
