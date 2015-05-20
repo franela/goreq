@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/franela/goreq.png?branch=master)](https://travis-ci.org/franela/goreq)
+[![Build Status](https://img.shields.io/travis/franela/goreq/master.svg)](https://travis-ci.org/franela/goreq)
 
 GoReq
 =======
