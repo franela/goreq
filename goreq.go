@@ -71,6 +71,10 @@ type Error struct {
 	Err     error
 }
 
+type transportRequestCanceler interface {
+	CancelRequest(*http.Request)
+}
+
 func (e *Error) Timeout() bool {
 	return e.timeout
 }
@@ -209,10 +213,10 @@ func prepareRequestBody(b interface{}) (io.Reader, error) {
 }
 
 var DefaultDialer = &net.Dialer{Timeout: 1000 * time.Millisecond}
-var DefaultTransport = &http.Transport{Dial: DefaultDialer.Dial, Proxy: http.ProxyFromEnvironment}
+var DefaultTransport http.RoundTripper = &http.Transport{Dial: DefaultDialer.Dial, Proxy: http.ProxyFromEnvironment}
 var DefaultClient = &http.Client{Transport: DefaultTransport}
 
-var proxyTransport *http.Transport
+var proxyTransport http.RoundTripper
 var proxyClient *http.Client
 
 func SetConnectTimeout(duration time.Duration) {
@@ -266,7 +270,7 @@ func (r Request) Do() (*Response, error) {
 		if proxyTransport == nil {
 			proxyTransport = &http.Transport{Dial: DefaultDialer.Dial, Proxy: http.ProxyURL(proxyUrl)}
 			proxyClient = &http.Client{Transport: proxyTransport}
-		} else {
+		} else if proxyTransport, ok := proxyTransport.(*http.Transport); ok {
 			proxyTransport.Proxy = http.ProxyURL(proxyUrl)
 		}
 		transport = proxyTransport
@@ -292,12 +296,14 @@ func (r Request) Do() (*Response, error) {
 		return nil
 	}
 
-	if r.Insecure {
-		transport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
-	} else if transport.TLSClientConfig != nil {
-		// the default TLS client (when transport.TLSClientConfig==nil) is
-		// already set to verify, so do nothing in that case
-		transport.TLSClientConfig.InsecureSkipVerify = false
+	if transport, ok := transport.(*http.Transport); ok {
+		if r.Insecure {
+			transport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+		} else if transport.TLSClientConfig != nil {
+			// the default TLS client (when transport.TLSClientConfig==nil) is
+			// already set to verify, so do nothing in that case
+			transport.TLSClientConfig.InsecureSkipVerify = false
+		}
 	}
 
 	req, err := r.NewRequest()
@@ -309,7 +315,7 @@ func (r Request) Do() (*Response, error) {
 
 	timeout := false
 	var timer *time.Timer
-	if r.Timeout > 0 {
+	if transport, ok := transport.(transportRequestCanceler); ok && r.Timeout > 0 {
 		timer = time.AfterFunc(r.Timeout, func() {
 			transport.CancelRequest(req)
 			timeout = true
