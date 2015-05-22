@@ -872,7 +872,7 @@ func TestRequest(t *testing.T) {
 				}
 				res, _ := req.Do()
 
-				Expect(DefaultTransport.TLSClientConfig.InsecureSkipVerify).Should(Equal(true))
+				Expect(DefaultTransport.(*http.Transport).TLSClientConfig.InsecureSkipVerify).Should(Equal(true))
 				Expect(res.StatusCode).Should(Equal(200))
 			})
 
