@@ -58,10 +58,14 @@ type Response struct {
 }
 
 func (r Response) CancelRequest() {
-	if transport, ok := DefaultTransport.(transportRequestCanceler); ok {
-		transport.CancelRequest(r.req)
-	}
+	cancelRequest(r.req)
 
+}
+
+func cancelRequest(r *http.Request) {
+	if transport, ok := DefaultTransport.(transportRequestCanceler); ok {
+		transport.CancelRequest(r)
+	}
 }
 
 type headerTuple struct {
@@ -323,9 +327,9 @@ func (r Request) Do() (*Response, error) {
 
 	timeout := false
 	var timer *time.Timer
-	if transport, ok := transport.(transportRequestCanceler); ok && r.Timeout > 0 {
+	if r.Timeout > 0 {
 		timer = time.AfterFunc(r.Timeout, func() {
-			transport.CancelRequest(req)
+			cancelRequest(req)
 			timeout = true
 		})
 	}
