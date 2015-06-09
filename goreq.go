@@ -54,6 +54,14 @@ type Response struct {
 	*http.Response
 	Uri  string
 	Body *Body
+	req  *http.Request
+}
+
+func (r Response) CancelRequest() {
+	if transport, ok := DefaultTransport.(transportRequestCanceler); ok {
+		transport.CancelRequest(r.req)
+	}
+
 }
 
 type headerTuple struct {
@@ -350,7 +358,7 @@ func (r Request) Do() (*Response, error) {
 		var response *Response
 		//If redirect fails we still want to return response data
 		if redirectFailed {
-			response = &Response{res, resUri, &Body{reader: res.Body}}
+			response = &Response{res, resUri, &Body{reader: res.Body}, req}
 		}
 
 		//If redirect fails and we haven't set a redirect count we shouldn't return an error
@@ -366,9 +374,9 @@ func (r Request) Do() (*Response, error) {
 		if err != nil {
 			return nil, &Error{Err: err}
 		}
-		return &Response{res, resUri, &Body{reader: res.Body, compressedReader: compressedReader}}, nil
+		return &Response{res, resUri, &Body{reader: res.Body, compressedReader: compressedReader}, req}, nil
 	} else {
-		return &Response{res, resUri, &Body{reader: res.Body}}, nil
+		return &Response{res, resUri, &Body{reader: res.Body}, req}, nil
 	}
 }
 

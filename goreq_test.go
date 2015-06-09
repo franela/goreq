@@ -353,7 +353,7 @@ func TestRequest(t *testing.T) {
 					Expect(err).Should(BeNil())
 
 					jar.SetCookies(uri, []*http.Cookie{
-						&http.Cookie{
+						{
 							Name:  "bar",
 							Value: "foo",
 							Path:  "/",
@@ -884,6 +884,27 @@ func TestRequest(t *testing.T) {
 				request, _ := req.NewRequest()
 				Expect(request).ShouldNot(BeNil())
 				Expect(request.Host).Should(Equal(req.Host))
+			})
+
+			g.It("Response should allow to cancel in-flight request", func() {
+				unblockc := make(chan bool)
+				ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					fmt.Fprintf(w, "Hello")
+					w.(http.Flusher).Flush()
+					<-unblockc
+				}))
+				defer ts.Close()
+				defer close(unblockc)
+
+				req := Request{
+					Insecure: true,
+					Uri:      ts.URL,
+					Host:     "foobar.com",
+				}
+				res, _ := req.Do()
+				res.CancelRequest()
+				_, err := ioutil.ReadAll(res.Body)
+				g.Assert(err != nil).IsTrue()
 			})
 		})
 
