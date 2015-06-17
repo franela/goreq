@@ -279,9 +279,11 @@ func (r Request) Do() (*Response, error) {
 			// proxy address is in a wrong format
 			return nil, &Error{Err: err}
 		}
-		if proxyTransport == nil {
+
+		//If jar is specified new client needs to be built
+		if proxyTransport == nil || client.Jar != nil {
 			proxyTransport = &http.Transport{Dial: DefaultDialer.Dial, Proxy: http.ProxyURL(proxyUrl)}
-			proxyClient = &http.Client{Transport: proxyTransport}
+			proxyClient = &http.Client{Transport: proxyTransport, Jar: client.Jar}
 		} else if proxyTransport, ok := proxyTransport.(*http.Transport); ok {
 			proxyTransport.Proxy = http.ProxyURL(proxyUrl)
 		}

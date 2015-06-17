@@ -950,6 +950,7 @@ func TestRequest(t *testing.T) {
 					if r.Method == "GET" && r.URL.Path == "/" {
 						lastReq = r
 						w.Header().Add("x-forwarded-for", "test")
+						w.Header().Add("Set-Cookie", "foo=bar")
 						w.WriteHeader(200)
 						w.Write([]byte(""))
 					} else if r.Method == "GET" && r.URL.Path == "/redirect_test/301" {
@@ -990,6 +991,18 @@ func TestRequest(t *testing.T) {
 				Expect(res.Header.Get("x-forwarded-for")).Should(Equal("test"))
 				Expect(lastReq).ShouldNot(BeNil())
 				Expect(lastReq.Header.Get("Proxy-Authorization")).Should(Equal("Basic dXNlcjpwYXNz"))
+			})
+
+			g.It("Should propagate cookies", func() {
+				proxiedHost, _ := url.Parse("http://www.google.com")
+				jar, _ := cookiejar.New(nil)
+				res, err := Request{Uri: proxiedHost.String(), Proxy: ts.URL, CookieJar: jar}.Do()
+				Expect(err).Should(BeNil())
+				Expect(res.Header.Get("x-forwarded-for")).Should(Equal("test"))
+
+				Expect(jar.Cookies(proxiedHost)).Should(HaveLen(1))
+				Expect(jar.Cookies(proxiedHost)[0].Name).Should(Equal("foo"))
+				Expect(jar.Cookies(proxiedHost)[0].Value).Should(Equal("bar"))
 			})
 
 		})
