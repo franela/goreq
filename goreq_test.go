@@ -813,6 +813,22 @@ func TestRequest(t *testing.T) {
 		})
 
 		g.Describe("Misc", func() {
+			g.It("Should set default golang user agent when not explicitly passed", func() {
+				ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					Expect(r.Header.Get("User-Agent")).ShouldNot(BeZero())
+					Expect(r.Host).Should(Equal("foobar.com"))
+
+					w.WriteHeader(200)
+				}))
+				defer ts.Close()
+
+				req := Request{Uri: ts.URL, Host: "foobar.com"}
+				res, err := req.Do()
+				Expect(err).ShouldNot(HaveOccurred())
+
+				Expect(res.StatusCode).Should(Equal(200))
+			})
+
 			g.It("Should offer to set request headers", func() {
 				ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					Expect(r.Header.Get("User-Agent")).Should(Equal("foobaragent"))
@@ -829,21 +845,6 @@ func TestRequest(t *testing.T) {
 				req := Request{Uri: ts.URL, Accept: "application/json", ContentType: "application/json", UserAgent: "foobaragent", Host: "foobar.com"}
 				req.AddHeader("X-Custom", "foobar")
 				res, _ := req.WithHeader("X-Custom2", "barfoo").Do()
-
-				Expect(res.StatusCode).Should(Equal(200))
-			})
-
-			g.It("Should set default golang user agent when not explicitly passed", func() {
-				ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					Expect(r.Header.Get("User-Agent")).Should(Equal("Go 1.1 package http"))
-					Expect(r.Host).Should(Equal("foobar.com"))
-
-					w.WriteHeader(200)
-				}))
-				defer ts.Close()
-
-				req := Request{Uri: ts.URL, Host: "foobar.com"}
-				res, _ := req.Do()
 
 				Expect(res.StatusCode).Should(Equal(200))
 			})
@@ -925,7 +926,7 @@ func TestRequest(t *testing.T) {
 				ts.Close()
 			})
 			g.It("Should throw an error when FromJsonTo fails", func() {
-				res, _ := Request{Method: "POST", Uri: ts.URL, Body: `{"foo": "bar"`}.Do()
+				res, _ := Request{Method: "POST", Uri: ts.URL, Body: `{"foo" "bar"}`}.Do()
 				var foobar map[string]string
 
 				err := res.Body.FromJsonTo(&foobar)
