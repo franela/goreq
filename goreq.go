@@ -381,9 +381,9 @@ func (r Request) Do() (*Response, error) {
 			return nil, &Error{Err: err}
 		}
 		return &Response{res, resUri, &Body{reader: res.Body, compressedReader: compressedReader}, req}, nil
-	} else {
-		return &Response{res, resUri, &Body{reader: res.Body}, req}, nil
 	}
+
+	return &Response{res, resUri, &Body{reader: res.Body}, req}, nil
 }
 
 func (r Request) addHeaders(headersMap http.Header) {
