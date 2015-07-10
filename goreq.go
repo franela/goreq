@@ -390,8 +390,12 @@ func (r Request) addHeaders(headersMap http.Header) {
 	if len(r.UserAgent) > 0 {
 		headersMap.Add("User-Agent", r.UserAgent)
 	}
-	headersMap.Add("Accept", r.Accept)
-	headersMap.Add("Content-Type", r.ContentType)
+	if r.Accept != "" {
+		headersMap.Add("Accept", r.Accept)
+	}
+	if r.ContentType != "" {
+		headersMap.Add("Content-Type", r.ContentType)
+	}
 }
 
 func (r Request) NewRequest() (*http.Request, error) {
