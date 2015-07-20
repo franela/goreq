@@ -364,7 +364,11 @@ func (r Request) Do() (*Response, error) {
 		var response *Response
 		//If redirect fails we still want to return response data
 		if redirectFailed {
-			response = &Response{res, resUri, &Body{reader: res.Body}, req}
+			if res != nil {
+				response = &Response{res, resUri, &Body{reader: res.Body}, req}
+			} else {
+				response = &Response{res, resUri, nil, req}
+			}
 		}
 
 		//If redirect fails and we haven't set a redirect count we shouldn't return an error
