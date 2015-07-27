@@ -42,6 +42,7 @@ type Request struct {
 	BasicAuthPassword string
 	CookieJar         http.CookieJar
 	ShowDebug         bool
+	OnBeforeRequest   func(goreq *Request, httpreq *http.Request)
 }
 
 type compression struct {
@@ -344,6 +345,9 @@ func (r Request) Do() (*Response, error) {
 		log.Println(string(dump))
 	}
 
+	if r.OnBeforeRequest != nil {
+		r.OnBeforeRequest(&r, req)
+	}
 	res, err := client.Do(req)
 	if timer != nil {
 		timer.Stop()
