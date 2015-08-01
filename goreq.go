@@ -154,52 +154,63 @@ func paramParse(query interface{}) (string, error) {
 	case *url.Values:
 		return query.(*url.Values).Encode(), nil
 	default:
-		var (
-			v = &url.Values{}
-			s = reflect.ValueOf(query)
-			t = reflect.TypeOf(query)
-		)
-		for t.Kind() == reflect.Ptr || t.Kind() == reflect.Interface {
-			s = s.Elem()
-			t = s.Type()
+		var v = &url.Values{}
+		err := paramParseStruct(v, query)
+		return v.Encode(), err
+	}
+}
+
+func paramParseStruct(v *url.Values, query interface{}) error {
+	var (
+		s = reflect.ValueOf(query)
+		t = reflect.TypeOf(query)
+	)
+	for t.Kind() == reflect.Ptr || t.Kind() == reflect.Interface {
+		s = s.Elem()
+		t = s.Type()
+	}
+	if t.Kind() != reflect.Struct {
+		return errors.New("Can not parse QueryString.")
+	}
+
+	for i := 0; i < t.NumField(); i++ {
+		var name string
+
+		field := s.Field(i)
+		typeField := t.Field(i)
+
+		if !field.CanInterface() {
+			continue
 		}
-		if t.Kind() == reflect.Struct {
-			for i := 0; i < t.NumField(); i++ {
-				var name string
 
-				field := s.Field(i)
-				typeField := t.Field(i)
+		urlTag := typeField.Tag.Get("url")
+		if urlTag == "-" {
+			continue
+		}
 
-				if !field.CanInterface() {
-					continue
-				}
+		name, opts := parseTag(urlTag)
 
-				urlTag := typeField.Tag.Get("url")
-				if urlTag == "-" {
-					continue
-				}
+		var omitEmpty, squash bool
+		omitEmpty = opts.Contains("omitempty")
+		squash = opts.Contains("squash")
 
-				var omitEmpty bool
-
-				if urlTag != "" {
-					tagName, opts := parseTag(urlTag)
-					name = tagName
-					omitEmpty = opts.Contains("omitempty")
-
-				} else {
-					name = strings.ToLower(typeField.Name)
-				}
-
-				if val := fmt.Sprintf("%v", field.Interface()); !(omitEmpty && len(val) == 0) {
-					v.Add(name, val)
-				}
-
+		if squash {
+			err := paramParseStruct(v, field.Interface())
+			if err != nil {
+				return err
 			}
-			return v.Encode(), nil
-		} else {
-			return "", errors.New("Can not parse QueryString.")
+			continue
+		}
+
+		if urlTag == "" {
+			name = strings.ToLower(typeField.Name)
+		}
+
+		if val := fmt.Sprintf("%v", field.Interface()); !(omitEmpty && len(val) == 0) {
+			v.Add(name, val)
 		}
 	}
+	return nil
 }
 
 func prepareRequestBody(b interface{}) (io.Reader, error) {
