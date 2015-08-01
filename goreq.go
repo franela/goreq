@@ -131,14 +131,6 @@ func (b *Body) ToStringLimited(limit int64) (string, error) {
 	return string(body), nil
 }
 
-func (b *Body) ToStringLimit(limit int64) (string, error) {
-	body, err := ioutil.ReadAll(io.LimitReader(b, limit))
-	if err != nil {
-		return "", err
-	}
-	return string(body), nil
-}
-
 func Gzip() *compression {
 	reader := func(buffer io.Reader) (io.ReadCloser, error) {
 		return gzip.NewReader(buffer)
