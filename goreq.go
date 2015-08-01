@@ -123,6 +123,22 @@ func (b *Body) ToString() (string, error) {
 	return string(body), nil
 }
 
+func (b *Body) ToStringLimited(limit int64) (string, error) {
+	body, err := ioutil.ReadAll(io.LimitReader(b, limit))
+	if err != nil {
+		return "", err
+	}
+	return string(body), nil
+}
+
+func (b *Body) ToStringLimit(limit int64) (string, error) {
+	body, err := ioutil.ReadAll(io.LimitReader(b, limit))
+	if err != nil {
+		return "", err
+	}
+	return string(body), nil
+}
+
 func Gzip() *compression {
 	reader := func(buffer io.Reader) (io.ReadCloser, error) {
 		return gzip.NewReader(buffer)
@@ -407,7 +423,6 @@ func (r Request) addHeaders(headersMap http.Header) {
 }
 
 func (r Request) NewRequest() (*http.Request, error) {
-
 	b, e := prepareRequestBody(r.Body)
 	if e != nil {
 		// there was a problem marshaling the body
@@ -424,8 +439,11 @@ func (r Request) NewRequest() (*http.Request, error) {
 
 	var bodyReader io.Reader
 	if b != nil && r.Compression != nil {
+
 		buffer := bytes.NewBuffer([]byte{})
+
 		readBuffer := bufio.NewReader(b)
+
 		writer, err := r.Compression.writer(buffer)
 		if err != nil {
 			return nil, &Error{Err: err}
@@ -437,10 +455,12 @@ func (r Request) NewRequest() (*http.Request, error) {
 		}
 		bodyReader = buffer
 	} else {
+		//bodyReader = io.LimitReader(b, 1024)
 		bodyReader = b
 	}
 
 	req, err := http.NewRequest(r.Method, r.Uri, bodyReader)
+
 	if err != nil {
 		return nil, err
 	}
