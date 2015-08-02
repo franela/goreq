@@ -15,9 +15,9 @@ Simple and sane HTTP request library for Go language.
 - [What can I do with it?](#user-content-what-can-i-do-with-it)
   - [Making requests with different methods](#user-content-making-requests-with-different-methods)
   - [GET](#user-content-get)
+    - [Tags](#user-content-tags)
   - [POST](#user-content-post)
     - [Sending payloads in the Body](#user-content-sending-payloads-in-the-body)
-  - [Tags](#user-content-tags)
   - [Specifiying request headers](#user-content-specifiying-request-headers)
   - [Sending Cookies](#cookie-support)
   - [Setting timeouts](#user-content-setting-timeouts)
@@ -121,34 +121,6 @@ res, err := goreq.Request{
 
 The sample above will send `http://localhost:3000/?limit=3&field=somefield&field=someotherfield`
 
-
-
-#### POST
-
-```go
-res, err := goreq.Request{ Method: "POST", Uri: "http://www.google.com" }.Do()
-```
-
-## Sending payloads in the Body
-
-You can send ```string```, ```Reader``` or ```interface{}``` in the body. The first two will be sent as text. The last one will be marshalled to JSON, if possible.
-
-```go
-type Item struct {
-    Id int
-    Name string
-}
-
-item := Item{ Id: 1111, Name: "foobar" }
-
-res, err := goreq.Request{
-    Method: "POST",
-    Uri: "http://www.google.com",
-    Body: item,
-}.Do()
-```
-
-
 ### Tags
 
 Struct field `url` tag is mainly used as the request parameter name.
@@ -213,6 +185,32 @@ goreq.Request{
 	QueryString: samurai,
 }.Do()
 // =>  `http://localhost/?first_name=&last_name=yagyu&country=Japan&city=Tokyo`
+```
+
+
+#### POST
+
+```go
+res, err := goreq.Request{ Method: "POST", Uri: "http://www.google.com" }.Do()
+```
+
+## Sending payloads in the Body
+
+You can send ```string```, ```Reader``` or ```interface{}``` in the body. The first two will be sent as text. The last one will be marshalled to JSON, if possible.
+
+```go
+type Item struct {
+    Id int
+    Name string
+}
+
+item := Item{ Id: 1111, Name: "foobar" }
+
+res, err := goreq.Request{
+    Method: "POST",
+    Uri: "http://www.google.com",
+    Body: item,
+}.Do()
 ```
 
 ## Specifiying request headers
