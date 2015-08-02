@@ -1092,7 +1092,7 @@ func Test_paramParse(t *testing.T) {
 	type EmbedForm struct {
 		AnnotedForm `url:",squash"`
 		Form        `url:",squash"`
-		Corge       string `url"corge`
+		Corge       string `url:"corge"`
 	}
 
 	g := Goblin(t)

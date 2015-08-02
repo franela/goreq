@@ -17,6 +17,7 @@ Simple and sane HTTP request library for Go language.
   - [GET](#user-content-get)
   - [POST](#user-content-post)
     - [Sending payloads in the Body](#user-content-sending-payloads-in-the-body)
+  - [Tags](#user-content-tags)
   - [Specifiying request headers](#user-content-specifiying-request-headers)
   - [Sending Cookies](#cookie-support)
   - [Setting timeouts](#user-content-setting-timeouts)
@@ -145,6 +146,73 @@ res, err := goreq.Request{
     Uri: "http://www.google.com",
     Body: item,
 }.Do()
+```
+
+
+### Tags
+
+Struct field `url` tag is mainly used as the request parameter name.
+Tags can be comma separated multiple values, 1st value is for naming and rest has special meanings.
+
+- special tag for 1st value
+    - `-`: value is ignored if set this
+
+- special tag for rest 2nd value
+    - `omitempty`: zero-value is ignored if set this
+    - `squash`: the fields of embedded struct is used for parameter
+
+#### Tag Examples
+
+```go
+type Place struct {
+    Country string `url:"country"`
+    City    string `url:"city"`
+    ZipCode string `url:"zipcode,omitempty"`
+}
+
+type Person struct {
+    Place `url:",squash"`
+
+    FirstName string `url:"first_name"`
+    LastName  string `url:"last_name"`
+    Age       string `url:"age,omitempty"`
+    Password  string `url:"-"`
+}
+
+johnbull := Person{
+	Place: Place{ // squash the embedded struct value
+		Country: "UK",
+		City:    "London",
+		ZipCode: "SW1",
+	},
+	FirstName: "John",
+	LastName:  "Doe",
+	Age:       "35",
+	Password:  "my-secret", // ignored for parameter
+}
+
+goreq.Request{
+	Uri:         "http://localhost/",
+	QueryString: johnbull,
+}.Do()
+// =>  `http://localhost/?first_name=John&last_name=Doe&age=35&country=UK&city=London&zip_code=SW1`
+
+
+// age and zipcode will be ignored because of `omitempty`
+// but firstname isn't.
+samurai := Person{
+	Place: Place{ // squash the embedded struct value
+		Country: "Japan",
+		City:    "Tokyo",
+	},
+	LastName: "Yagyu",
+}
+
+goreq.Request{
+	Uri:         "http://localhost/",
+	QueryString: samurai,
+}.Do()
+// =>  `http://localhost/?first_name=&last_name=yagyu&country=Japan&city=Tokyo`
 ```
 
 ## Specifiying request headers
