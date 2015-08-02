@@ -1089,10 +1089,17 @@ func Test_paramParse(t *testing.T) {
 		Qux  string `url:"-"`
 	}
 
+	type EmbedForm struct {
+		AnnotedForm `url:",squash"`
+		Form        `url:",squash"`
+		Corge       string `url:"corge"`
+	}
+
 	g := Goblin(t)
 	RegisterFailHandler(func(m string, _ ...int) { g.Fail(m) })
 	var form = Form{}
 	var aform = AnnotedForm{}
+	var eform = EmbedForm{}
 	var values = url.Values{}
 	const result = "a=1&b=2"
 	g.Describe("QueryString ParamParse", func() {
@@ -1103,6 +1110,9 @@ func Test_paramParse(t *testing.T) {
 			aform.Foo = "xyz"
 			aform.Norf = "abc"
 			aform.Qux = "def"
+			eform.Form = form
+			eform.AnnotedForm = aform
+			eform.Corge = "xxx"
 			values.Add("a", "1")
 			values.Add("b", "2")
 		})
@@ -1128,6 +1138,11 @@ func Test_paramParse(t *testing.T) {
 			Expect(err).Should(BeNil())
 			Expect(str).Should(Equal(result))
 		})
+		g.It("Should accept embedded struct", func() {
+			str, err := paramParse(eform)
+			Expect(err).Should(BeNil())
+			Expect(str).Should(Equal("a=1&b=2&corge=xxx&foo_bar=xyz&norf=abc"))
+		})
 		g.It("Should accept interface{} which forcely converted by struct", func() {
 			str, err := paramParse(interface{}(&form))
 			Expect(err).Should(BeNil())
@@ -1140,7 +1155,7 @@ func Test_paramParse(t *testing.T) {
 			Expect(str).Should(Equal(result))
 		})
 		g.It("Should accept &url.Values", func() {
-			str, err := paramParse(values)
+			str, err := paramParse(&values)
 			Expect(err).Should(BeNil())
 			Expect(str).Should(Equal(result))
 		})
