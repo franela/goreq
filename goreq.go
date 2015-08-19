@@ -266,11 +266,13 @@ func (r *Request) AddCookie(c *http.Cookie) {
 func (r Request) WithCookie(c *http.Cookie) Request {
 	r.AddCookie(c)
 	return r
+
 }
 
 func (r Request) Do() (*Response, error) {
-	var transport = DefaultTransport
 	var client = DefaultClient
+	var transport = DefaultTransport
+	client.Transport = transport
 	var resUri string
 	var redirectFailed bool
 
@@ -324,7 +326,11 @@ func (r Request) Do() (*Response, error) {
 
 	if transport, ok := transport.(*http.Transport); ok {
 		if r.Insecure {
-			transport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+			if transport.TLSClientConfig != nil {
+				transport.TLSClientConfig.InsecureSkipVerify = true
+			} else {
+				transport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+			}
 		} else if transport.TLSClientConfig != nil {
 			// the default TLS client (when transport.TLSClientConfig==nil) is
 			// already set to verify, so do nothing in that case
