@@ -898,6 +898,7 @@ func TestRequest(t *testing.T) {
 					w.WriteHeader(200)
 				}))
 				defer ts.Close()
+				var currentTransport = DefaultTransport
 				DefaultTransport = &http.Transport{Dial: DefaultDialer.Dial}
 
 				req := Request{
@@ -909,6 +910,8 @@ func TestRequest(t *testing.T) {
 
 				Expect(DefaultClient.Transport.(*http.Transport).TLSClientConfig.InsecureSkipVerify).Should(Equal(true))
 				Expect(res.StatusCode).Should(Equal(200))
+
+				DefaultTransport = currentTransport
 
 			})
 			g.It("GetRequest should return the underlying httpRequest ", func() {

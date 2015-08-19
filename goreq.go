@@ -272,7 +272,6 @@ func (r Request) WithCookie(c *http.Cookie) Request {
 func (r Request) Do() (*Response, error) {
 	var client = DefaultClient
 	var transport = DefaultTransport
-	client.Transport = transport
 	var resUri string
 	var redirectFailed bool
 
