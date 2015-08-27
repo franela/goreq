@@ -399,6 +399,18 @@ func (r Request) Do() (*Response, error) {
 		return response, &Error{timeout: timeout, Err: err}
 	}
 
+	if r.ShowDebug {
+		dump, err := httputil.DumpResponse(res, false)
+		if err != nil {
+			log.Println(err)
+		}
+		log.Println(string(dump))
+
+		body, _ := ioutil.ReadAll(res.Body)
+		log.Println(string(body))
+		res.Body = ioutil.NopCloser(bytes.NewBuffer(body))
+	}
+
 	if r.Compression != nil && strings.Contains(res.Header.Get("Content-Encoding"), r.Compression.ContentEncoding) {
 		compressedReader, err := r.Compression.reader(res.Body)
 		if err != nil {
