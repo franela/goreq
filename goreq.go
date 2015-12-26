@@ -59,13 +59,13 @@ type Response struct {
 }
 
 func (r Response) CancelRequest() {
-	cancelRequest(r.req)
+	cancelRequest(DefaultTransport, r.req)
 
 }
 
-func cancelRequest(r *http.Request) {
-	if transport, ok := DefaultTransport.(transportRequestCanceler); ok {
-		transport.CancelRequest(r)
+func cancelRequest(transport interface{}, r *http.Request) {
+	if tp, ok := transport.(transportRequestCanceler); ok {
+		tp.CancelRequest(r)
 	}
 }
 
@@ -348,7 +348,7 @@ func (r Request) Do() (*Response, error) {
 	var timer *time.Timer
 	if r.Timeout > 0 {
 		timer = time.AfterFunc(r.Timeout, func() {
-			cancelRequest(req)
+			cancelRequest(transport, req)
 			timeout = true
 		})
 	}
