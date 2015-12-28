@@ -809,6 +809,26 @@ func TestRequest(t *testing.T) {
 					Expect(res).Should(BeNil())
 					Expect(err.(*Error).Timeout()).Should(BeTrue())
 				})
+				g.It("Should request timeout after a custom amount of time even with proxy", func() {
+					proxy := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+						time.Sleep(2000 * time.Millisecond)
+						w.WriteHeader(200)
+					}))
+					SetConnectTimeout(1000 * time.Millisecond)
+					start := time.Now()
+					request := Request{
+						Uri:     ts.URL,
+						Proxy:   proxy.URL,
+						Timeout: 500 * time.Millisecond,
+					}
+					res, err := request.Do()
+					elapsed := time.Since(start)
+
+					Expect(elapsed).Should(BeNumerically("<", 550*time.Millisecond))
+					Expect(elapsed).Should(BeNumerically(">=", 500*time.Millisecond))
+					Expect(res).Should(BeNil())
+					Expect(err.(*Error).Timeout()).Should(BeTrue())
+				})
 			})
 		})
 
