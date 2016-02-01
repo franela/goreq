@@ -850,8 +850,13 @@ func TestRequest(t *testing.T) {
 					Expect(r.Host).Should(Equal("foobar.com"))
 					Expect(r.Header.Get("Content-Type")).Should(Equal("multipart/mixed"))
 
-					b, _ := ioutil.ReadAll(r.Body)
+					b, err := ioutil.ReadAll(r.Body)
+					Expect(err).ShouldNot(HaveOccurred())
+					fmt.Println(string(b))
 					Expect(b).ShouldNot(HaveLen(0))
+					Expect(string(b)).Should(ContainSubstring(`Content-Disposition: form-data; name="something"`))
+					Expect(string(b)).Should(ContainSubstring(`Content-Disposition: form-data; name="file"; filename="mything.txt"`))
+					Expect(string(b)).Should(ContainSubstring(`Content-Type: application/octet-stream`))
 
 					w.WriteHeader(200)
 				}))
