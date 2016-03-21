@@ -25,7 +25,7 @@ type itimeout interface {
 	Timeout() bool
 }
 type Request struct {
-	headers           []headerTuple
+	Headers           []Header
 	cookies           []*http.Cookie
 	Method            string
 	Uri               string
@@ -72,9 +72,9 @@ func cancelRequest(transport interface{}, r *http.Request) {
 	}
 }
 
-type headerTuple struct {
-	name  string
-	value string
+type Header struct {
+	Name  string
+	Value string
 }
 
 type Body struct {
@@ -252,10 +252,10 @@ func SetConnectTimeout(duration time.Duration) {
 }
 
 func (r *Request) AddHeader(name string, value string) {
-	if r.headers == nil {
-		r.headers = []headerTuple{}
+	if r.Headers == nil {
+		r.Headers = []Header{}
 	}
-	r.headers = append(r.headers, headerTuple{name: name, value: value})
+	r.Headers = append(r.Headers, Header{Name: name, Value: value})
 }
 
 func (r Request) WithHeader(name string, value string) Request {
@@ -465,9 +465,9 @@ func (r Request) NewRequest() (*http.Request, error) {
 		req.Header.Add("Content-Encoding", r.Compression.ContentEncoding)
 		req.Header.Add("Accept-Encoding", r.Compression.ContentEncoding)
 	}
-	if r.headers != nil {
-		for _, header := range r.headers {
-			req.Header.Add(header.name, header.value)
+	if r.Headers != nil {
+		for _, header := range r.Headers {
+			req.Header.Add(header.Name, header.Value)
 		}
 	}
 

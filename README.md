@@ -224,6 +224,16 @@ res, err := goreq.Request{
     Accept: "application/json",
     ContentType: "application/json",
     UserAgent: "goreq",
+    Headers: []goreq.Header{
+        {
+            "X-Custom-1",
+			"somevalue",
+        },
+        {
+            "X-Custom-2",
+			"someothervalue",
+        },
+    },
 }.Do()
 ```
 
