@@ -19,6 +19,7 @@ import (
 	"reflect"
 	"strings"
 	"time"
+    "github.com/imdario/mergo"
 )
 
 type itimeout interface {
@@ -488,4 +489,17 @@ func valueOrDefault(value, def string) string {
 		return value
 	}
 	return def
+}
+
+//MergeRequests merge Requests into one
+func MergeRequests(reqs ...goreq.Request) goreq.Request {
+	newReq := goreq.Request{}
+
+	if len(reqs) > 0 {
+		for _, oldReq := range reqs {
+            mergo.MergeWithOverwrite(&newReq, oldReq)
+		}
+	}
+    
+	return newReq
 }
