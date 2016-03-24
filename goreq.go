@@ -492,8 +492,8 @@ func valueOrDefault(value, def string) string {
 }
 
 //MergeRequests merge Requests into one
-func MergeRequests(reqs ...goreq.Request) goreq.Request {
-	newReq := goreq.Request{}
+func MergeRequests(reqs ...Request) Request {
+	newReq := Request{}
 
 	if len(reqs) > 0 {
 		for _, oldReq := range reqs {
