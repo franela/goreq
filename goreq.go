@@ -437,17 +437,32 @@ func (r Request) NewRequest() (*http.Request, error) {
 
 	var bodyReader io.Reader
 	if b != nil && r.Compression != nil {
-		buffer := bytes.NewBuffer([]byte{})
+
+		buffer, pw := io.Pipe()
 		readBuffer := bufio.NewReader(b)
-		writer, err := r.Compression.writer(buffer)
+		writer, err := r.Compression.writer(pw)
 		if err != nil {
 			return nil, &Error{Err: err}
 		}
-		_, e = readBuffer.WriteTo(writer)
-		writer.Close()
-		if e != nil {
-			return nil, &Error{Err: e}
-		}
+		go func() {
+			_, err := readBuffer.WriteTo(writer)
+			if err != nil {
+				log.Fatal(err)
+			}
+			writer.Close()
+			pw.Close()
+		}()
+		// buffer := bytes.NewBuffer([]byte{})
+		// readBuffer := bufio.NewReader(b)
+		// writer, err := r.Compression.writer(buffer)
+		// if err != nil {
+		// 	return nil, &Error{Err: err}
+		// }
+		// _, e = readBuffer.WriteTo(writer)
+		// writer.Close()
+		// if e != nil {
+		// 	return nil, &Error{Err: e}
+		// }
 		bodyReader = buffer
 	} else {
 		bodyReader = b
