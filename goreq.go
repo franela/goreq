@@ -1,7 +1,6 @@
 package goreq
 
 import (
-	"bufio"
 	"bytes"
 	"compress/gzip"
 	"compress/zlib"
@@ -438,17 +437,12 @@ func (r Request) NewRequest() (*http.Request, error) {
 	var bodyReader io.Reader
 	if b != nil && r.Compression != nil {
 		buffer := bytes.NewBuffer([]byte{})
-		readBuffer := bufio.NewReader(b)
 		writer, err := r.Compression.writer(buffer)
 		if err != nil {
 			return nil, &Error{Err: err}
 		}
-		_, e = readBuffer.WriteTo(writer)
-		writer.Close()
-		if e != nil {
-			return nil, &Error{Err: e}
-		}
-		bodyReader = buffer
+		cr := newCompressReader(b, writer, buffer)
+		bodyReader = cr
 	} else {
 		bodyReader = b
 	}
