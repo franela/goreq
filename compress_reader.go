@@ -14,7 +14,7 @@ func newCompressReader(source io.Reader, compressor io.WriteCloser, dest io.Read
 }
 
 func (cr *compressReader) Read(p []byte) (n int, err error) {
-	buf := make([]byte, cap(p), len(p))
+	buf := make([]byte, len(p), cap(p))
 	n, err = cr.source.Read(buf)
 	if n > 0 {
 		i, e := cr.compressor.Write(buf[:n])
