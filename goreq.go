@@ -436,12 +436,10 @@ func (r Request) NewRequest() (*http.Request, error) {
 
 	var bodyReader io.Reader
 	if b != nil && r.Compression != nil {
-		buffer := bytes.NewBuffer([]byte{})
-		writer, err := r.Compression.writer(buffer)
+		cr, err := newCompressReader(b, r.Compression.writer)
 		if err != nil {
 			return nil, &Error{Err: err}
 		}
-		cr := newCompressReader(b, writer, buffer)
 		bodyReader = cr
 	} else {
 		bodyReader = b

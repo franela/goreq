@@ -1,6 +1,9 @@
 package goreq
 
-import "io"
+import (
+	"bytes"
+	"io"
+)
 
 type compressReader struct {
 	source     io.Reader
@@ -9,8 +12,13 @@ type compressReader struct {
 	eof        bool
 }
 
-func newCompressReader(source io.Reader, compressor io.WriteCloser, dest io.Reader) *compressReader {
-	return &compressReader{source: source, compressor: compressor, dest: dest}
+func newCompressReader(source io.Reader, writerGen func(buffer io.Writer) (io.WriteCloser, error)) (*compressReader, error) {
+	buffer := bytes.NewBuffer([]byte{})
+	writer, err := writerGen(buffer)
+	if err != nil {
+		return nil, err
+	}
+	return &compressReader{source: source, compressor: writer, dest: buffer}, nil
 }
 
 func (cr *compressReader) Read(p []byte) (n int, err error) {
