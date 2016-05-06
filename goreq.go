@@ -3,7 +3,6 @@ package goreq
 import (
 	"bufio"
 	"bytes"
-	"compress/gzip"
 	"compress/zlib"
 	"crypto/tls"
 	"encoding/json"
@@ -19,6 +18,8 @@ import (
 	"reflect"
 	"strings"
 	"time"
+
+	gzip "github.com/klauspost/pgzip"
 )
 
 type itimeout interface {
