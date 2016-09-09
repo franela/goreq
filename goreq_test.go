@@ -886,7 +886,7 @@ func TestRequest(t *testing.T) {
 				Expect(res.StatusCode).Should(Equal(200))
 			})
 
-			g.It("Should not create a body by defualt", func() {
+			g.It("Should not create a body by default", func() {
 				ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					b, _ := ioutil.ReadAll(r.Body)
 					Expect(b).Should(HaveLen(0))
@@ -904,13 +904,13 @@ func TestRequest(t *testing.T) {
 				defer ts.Close()
 
 				req := Request{
+					Client:   &http.Client{Transport: DefaultTransport},
 					Insecure: true,
 					Uri:      ts.URL,
 					Host:     "foobar.com",
 				}
 				res, _ := req.Do()
-
-				Expect(DefaultClient.Transport.(*http.Transport).TLSClientConfig.InsecureSkipVerify).Should(Equal(true))
+				Expect(req.Client.Transport.(*http.Transport).TLSClientConfig.InsecureSkipVerify).Should(Equal(true))
 				Expect(res.StatusCode).Should(Equal(200))
 			})
 			g.It("Should work if a different transport is specified", func() {
@@ -922,13 +922,14 @@ func TestRequest(t *testing.T) {
 				DefaultTransport = &http.Transport{Dial: DefaultDialer.Dial}
 
 				req := Request{
+					Client:   &http.Client{Transport: DefaultTransport},
 					Insecure: true,
 					Uri:      ts.URL,
 					Host:     "foobar.com",
 				}
 				res, _ := req.Do()
 
-				Expect(DefaultClient.Transport.(*http.Transport).TLSClientConfig.InsecureSkipVerify).Should(Equal(true))
+				Expect(req.Client.Transport.(*http.Transport).TLSClientConfig.InsecureSkipVerify).Should(Equal(true))
 				Expect(res.StatusCode).Should(Equal(200))
 
 				DefaultTransport = currentTransport
