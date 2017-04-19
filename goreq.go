@@ -25,6 +25,7 @@ type itimeout interface {
 	Timeout() bool
 }
 type Request struct {
+	Client            *http.Client
 	headers           []headerTuple
 	cookies           []*http.Cookie
 	Method            string
@@ -242,7 +243,6 @@ func prepareRequestBody(b interface{}) (io.Reader, error) {
 
 var DefaultDialer = &net.Dialer{Timeout: 1000 * time.Millisecond}
 var DefaultTransport http.RoundTripper = &http.Transport{Dial: DefaultDialer.Dial, Proxy: http.ProxyFromEnvironment}
-var DefaultClient = &http.Client{Transport: DefaultTransport}
 
 var proxyTransport http.RoundTripper
 var proxyClient *http.Client
@@ -274,21 +274,27 @@ func (r Request) WithCookie(c *http.Cookie) Request {
 }
 
 func (r Request) Do() (*Response, error) {
-	var client = DefaultClient
 	var transport = DefaultTransport
+
+	if r.Client == nil {
+		// use a client with a cookie jar if necessary. We create a new client not
+		// to modify the default one.
+		if r.CookieJar != nil {
+			r.Client = &http.Client{
+				Transport: transport,
+				Jar:       r.CookieJar,
+			}
+		} else {
+			r.Client = &http.Client{
+				Transport: transport,
+			}
+		}
+	}
+
 	var resUri string
 	var redirectFailed bool
 
 	r.Method = valueOrDefault(r.Method, "GET")
-
-	// use a client with a cookie jar if necessary. We create a new client not
-	// to modify the default one.
-	if r.CookieJar != nil {
-		client = &http.Client{
-			Transport: transport,
-			Jar:       r.CookieJar,
-		}
-	}
 
 	if r.Proxy != "" {
 		proxyUrl, err := url.Parse(r.Proxy)
@@ -298,21 +304,20 @@ func (r Request) Do() (*Response, error) {
 		}
 
 		//If jar is specified new client needs to be built
-		if proxyTransport == nil || client.Jar != nil {
+		if proxyTransport == nil || r.Client.Jar != nil {
 			proxyTransport = &http.Transport{Dial: DefaultDialer.Dial, Proxy: http.ProxyURL(proxyUrl)}
-			proxyClient = &http.Client{Transport: proxyTransport, Jar: client.Jar}
+			proxyClient = &http.Client{Transport: proxyTransport, Jar: r.Client.Jar}
 		} else if proxyTransport, ok := proxyTransport.(*http.Transport); ok {
 			proxyTransport.Proxy = http.ProxyURL(proxyUrl)
 		}
 		transport = proxyTransport
-		client = proxyClient
+		r.Client = proxyClient
 	}
 
-	client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
-
+	r.Client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
 		if len(via) > r.MaxRedirects {
 			redirectFailed = true
-			return errors.New("Error redirecting. MaxRedirects reached")
+			return errors.New("Error redirecting. MaxRedirects reached.")
 		}
 
 		resUri = req.URL.String()
@@ -350,7 +355,7 @@ func (r Request) Do() (*Response, error) {
 
 	timeout := false
 	if r.Timeout > 0 {
-		client.Timeout = r.Timeout
+		r.Client.Timeout = r.Timeout
 	}
 
 	if r.ShowDebug {
@@ -364,8 +369,7 @@ func (r Request) Do() (*Response, error) {
 	if r.OnBeforeRequest != nil {
 		r.OnBeforeRequest(&r, req)
 	}
-	res, err := client.Do(req)
-
+	res, err := r.Client.Do(req)
 	if err != nil {
 		if !timeout {
 			if t, ok := err.(itimeout); ok {
@@ -386,11 +390,11 @@ func (r Request) Do() (*Response, error) {
 			} else {
 				response = &Response{res, resUri, nil, req}
 			}
-		}
 
-		//If redirect fails and we haven't set a redirect count we shouldn't return an error
-		if redirectFailed && r.MaxRedirects == 0 {
-			return response, nil
+			//If redirect fails and we haven't set a redirect count we shouldn't return an error
+			if r.MaxRedirects == 0 {
+				return response, nil
+			}
 		}
 
 		return response, &Error{timeout: timeout, Err: err}
