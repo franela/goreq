@@ -30,6 +30,7 @@ type Request struct {
 	Method            string
 	Uri               string
 	Body              interface{}
+	BodyReader        io.Reader
 	QueryString       interface{}
 	Timeout           time.Duration
 	ContentType       string
@@ -436,7 +437,9 @@ func (r Request) NewRequest() (*http.Request, error) {
 	}
 
 	var bodyReader io.Reader
-	if b != nil && r.Compression != nil {
+	if r.BodyReader != nil {
+		bodyReader = r.BodyReader
+	} else if b != nil && r.Compression != nil {
 		buffer := bytes.NewBuffer([]byte{})
 		readBuffer := bufio.NewReader(b)
 		writer, err := r.Compression.writer(buffer)

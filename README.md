@@ -18,6 +18,7 @@ Simple and sane HTTP request library for Go language.
     - [Tags](#user-content-tags)
   - [POST](#user-content-post)
     - [Sending payloads in the Body](#user-content-sending-payloads-in-the-body)
+    - [Sending custom Body](#user-content-sending-custom-body)
   - [Specifiying request headers](#user-content-specifiying-request-headers)
   - [Sending Cookies](#cookie-support)
   - [Setting timeouts](#user-content-setting-timeouts)
@@ -210,6 +211,25 @@ res, err := goreq.Request{
     Method: "POST",
     Uri: "http://www.google.com",
     Body: item,
+}.Do()
+```
+
+## Sending custom Body
+
+You can send custom params in the body using ```BodyReader``` field.
+
+```go
+params := url.Values{}
+params.Add("user", "Jhon")
+params.Add("password", "myPass")
+params.Add("product", 123)
+params.Add("format", "xml")
+
+res, err := goreq.Request{
+    Method: "POST",
+    Uri: "http://www.google.com",
+    ContentType: "application/x-www-form-urlencoded",
+    BodyReader: strings.NewReader(params.Encode()),
 }.Do()
 ```
 
