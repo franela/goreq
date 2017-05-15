@@ -467,7 +467,7 @@ func (r Request) NewRequest() (*http.Request, error) {
 	}
 	if r.headers != nil {
 		for _, header := range r.headers {
-			req.Header.Add(header.name, header.value)
+			req.Header[header.name] = []string{header.value}
 		}
 	}
 
