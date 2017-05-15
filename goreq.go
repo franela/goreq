@@ -307,7 +307,7 @@ func (r Request) Do() (*Response, error) {
 		transport = proxyTransport
 		client = proxyClient
 	}
-
+	client.Timeout = r.Timeout
 	client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
 
 		if len(via) > r.MaxRedirects {
