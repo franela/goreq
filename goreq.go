@@ -274,7 +274,8 @@ func (r Request) WithCookie(c *http.Cookie) Request {
 }
 
 func (r Request) Do() (*Response, error) {
-	var client = DefaultClient
+	var c = *DefaultClient // copy into local memory for concurrency execution
+	var client = &c
 	var transport = DefaultTransport
 	var resUri string
 	var redirectFailed bool
