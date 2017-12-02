@@ -40,6 +40,7 @@ type Request struct {
 	MaxRedirects      int
 	RedirectHeaders   bool
 	Proxy             string
+	proxyHeaders      []headerTuple
 	Compression       *compression
 	BasicAuthUsername string
 	BasicAuthPassword string
@@ -270,7 +271,18 @@ func (r *Request) AddCookie(c *http.Cookie) {
 func (r Request) WithCookie(c *http.Cookie) Request {
 	r.AddCookie(c)
 	return r
+}
 
+func (r *Request) AddProxyHeader(name string, value string) {
+	if r.proxyHeaders == nil {
+		r.proxyHeaders = []headerTuple{}
+	}
+	r.proxyHeaders = append(r.proxyHeaders, headerTuple{name: name, value: value})
+}
+
+func (r Request) WithProxyHeader(name string, value string) Request {
+	r.AddProxyHeader(name, value)
+	return r
 }
 
 func (r Request) Do() (*Response, error) {
@@ -297,12 +309,24 @@ func (r Request) Do() (*Response, error) {
 			return nil, &Error{Err: err}
 		}
 
+		proxyHeader := make(http.Header)
+		if r.proxyHeaders != nil {
+			for _, header := range r.proxyHeaders {
+				proxyHeader.Add(header.name, header.value)
+			}
+		}
+
 		//If jar is specified new client needs to be built
 		if proxyTransport == nil || client.Jar != nil {
-			proxyTransport = &http.Transport{Dial: DefaultDialer.Dial, Proxy: http.ProxyURL(proxyUrl)}
+			proxyTransport = &http.Transport{
+				Dial:               DefaultDialer.Dial,
+				Proxy:              http.ProxyURL(proxyUrl),
+				ProxyConnectHeader: proxyHeader,
+			}
 			proxyClient = &http.Client{Transport: proxyTransport, Jar: client.Jar}
 		} else if proxyTransport, ok := proxyTransport.(*http.Transport); ok {
 			proxyTransport.Proxy = http.ProxyURL(proxyUrl)
+			proxyTransport.ProxyConnectHeader = proxyHeader
 		}
 		transport = proxyTransport
 		client = proxyClient
