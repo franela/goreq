@@ -1013,6 +1013,8 @@ func TestRequest(t *testing.T) {
 						w.Write([]byte(""))
 					} else if r.Method == "GET" && r.URL.Path == "/redirect_test/301" {
 						http.Redirect(w, r, "/", 301)
+					} else if r.Method == "CONNECT" {
+						lastReq = r
 					}
 				}))
 
@@ -1061,6 +1063,16 @@ func TestRequest(t *testing.T) {
 				Expect(jar.Cookies(proxiedHost)).Should(HaveLen(1))
 				Expect(jar.Cookies(proxiedHost)[0].Name).Should(Equal("foo"))
 				Expect(jar.Cookies(proxiedHost)[0].Value).Should(Equal("bar"))
+			})
+
+			g.It("Should use ProxyConnectHeader authentication", func() {
+				_, err := Request{Uri: "https://10.255.255.1",
+					Proxy:    ts.URL,
+					Insecure: true,
+				}.WithProxyConnectHeader("X-TEST-HEADER", "TEST").Do()
+
+				Expect(err).ShouldNot(BeNil())
+				Expect(lastReq.Header.Get("X-TEST-HEADER")).Should(Equal("TEST"))
 			})
 
 		})
