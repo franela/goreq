@@ -1013,6 +1013,8 @@ func TestRequest(t *testing.T) {
 						w.Write([]byte(""))
 					} else if r.Method == "GET" && r.URL.Path == "/redirect_test/301" {
 						http.Redirect(w, r, "/", 301)
+					} else if r.Method == "CONNECT" {
+						lastReq = r
 					}
 				}))
 
@@ -1063,49 +1065,14 @@ func TestRequest(t *testing.T) {
 				Expect(jar.Cookies(proxiedHost)[0].Value).Should(Equal("bar"))
 			})
 
-		})
-
-		g.Describe("TLS Proxy", func() {
-			var proxy *httptest.Server
-			proxyCh := make(chan *http.Request, 1)
-
-			createServer := func() {
-				proxy = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					proxyCh <- r
-				}))
-			}
-
-			g.Before(func() {
-				createServer()
-			})
-
-			g.BeforeEach(func() {
-				proxy.Close()
-				createServer()
-			})
-
-			g.After(func() {
-				proxy.Close()
-			})
-
-			g.It("Should use Proxy Header authentication", func() {
-				res, err := Request{Uri: "https://10.255.255.1",
-					Proxy:    proxy.URL,
+			g.It("Should use ProxyConnectHeader authentication", func() {
+				_, err := Request{Uri: "https://10.255.255.1",
+					Proxy:    ts.URL,
 					Insecure: true,
 				}.WithProxyConnectHeader("X-TEST-HEADER", "TEST").Do()
-				if err == nil {
-					res.Body.Close()
-					t.Fatal("unexecuted success")
-				}
 
-				var got *http.Request
-				select {
-				case got = <-proxyCh:
-				case <-time.After(5 * time.Second):
-					t.Fatal("timeout connecting to http proxy")
-				}
-
-				Expect(got.Header.Get("X-TEST-HEADER")).Should(Equal("TEST"))
+				Expect(err).ShouldNot(BeNil())
+				Expect(lastReq.Header.Get("X-TEST-HEADER")).Should(Equal("TEST"))
 			})
 
 		})
