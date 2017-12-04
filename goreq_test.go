@@ -8,7 +8,6 @@ import (
 	"io"
 	"io/ioutil"
 	"math"
-	"net"
 	"net/http"
 	"net/http/cookiejar"
 	"net/http/httptest"
@@ -1067,55 +1066,49 @@ func TestRequest(t *testing.T) {
 		})
 
 		g.Describe("TLS Proxy", func() {
-			var ts *httptest.Server
 			var proxy *httptest.Server
 			proxyCh := make(chan *http.Request, 1)
 
 			createServer := func() {
-				ts = httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					w.Write([]byte("Hello"))
-					w.(http.Flusher).Flush()
-				}))
-
 				proxy = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					proxyCh <- r
 					// Implement an entire CONNECT proxy
 					if r.Method == "CONNECT" {
-						hijacker, ok := w.(http.Hijacker)
-						if !ok {
-							t.Errorf("hijack not allowed")
-							return
-						}
-						clientConn, _, err := hijacker.Hijack()
-						if err != nil {
-							t.Errorf("hijacking failed")
-							return
-						}
+						// hijacker, ok := w.(http.Hijacker)
+						// if !ok {
+						// 	t.Errorf("hijack not allowed")
+						// 	return
+						// }
+						// clientConn, _, err := hijacker.Hijack()
+						// if err != nil {
+						// 	t.Errorf("hijacking failed")
+						// 	return
+						// }
 
-						res := &http.Response{
-							StatusCode: http.StatusOK,
-							Proto:      "HTTP/1.1",
-							ProtoMajor: 1,
-							ProtoMinor: 1,
-							Header:     r.Header,
-						}
+						// res := &http.Response{
+						// 	StatusCode: http.StatusOK,
+						// 	Proto:      "HTTP/1.1",
+						// 	ProtoMajor: 1,
+						// 	ProtoMinor: 1,
+						// 	Header:     r.Header,
+						// }
 
-						targetConn, err := net.Dial("tcp", r.URL.Host)
-						if err != nil {
-							t.Errorf("net.Dial(%q) failed: %v", r.URL.Host, err)
-							return
-						}
+						// targetConn, err := net.Dial("tcp", r.URL.Host)
+						// if err != nil {
+						// 	t.Errorf("net.Dial(%q) failed: %v", r.URL.Host, err)
+						// 	return
+						// }
 
-						if err := res.Write(clientConn); err != nil {
-							t.Errorf("Writing 200 OK failed: %v", err)
-							return
-						}
+						// if err := res.Write(clientConn); err != nil {
+						// 	t.Errorf("Writing 200 OK failed: %v", err)
+						// 	return
+						// }
 
-						go io.Copy(targetConn, clientConn)
-						go func() {
-							io.Copy(clientConn, targetConn)
-							targetConn.Close()
-						}()
+						// go io.Copy(targetConn, clientConn)
+						// go func() {
+						// 	io.Copy(clientConn, targetConn)
+						// 	targetConn.Close()
+						// }()
 					}
 				}))
 			}
@@ -1125,22 +1118,23 @@ func TestRequest(t *testing.T) {
 			})
 
 			g.BeforeEach(func() {
-				ts.Close()
 				proxy.Close()
 				createServer()
 			})
 
 			g.After(func() {
-				ts.Close()
 				proxy.Close()
 			})
 
 			g.It("Should use Proxy Header authentication", func() {
-				res, err := Request{Uri: ts.URL,
+				res, err := Request{Uri: "https://10.255.255.1",
 					Proxy:    proxy.URL,
 					Insecure: true,
 				}.WithProxyConnectHeader("X-TEST-HEADER", "TEST").Do()
-				defer res.Body.Close()
+				if err == nil {
+					res.Body.Close()
+					t.Fatal("unexecuted success")
+				}
 
 				var got *http.Request
 				select {
@@ -1149,10 +1143,6 @@ func TestRequest(t *testing.T) {
 					t.Fatal("timeout connecting to http proxy")
 				}
 
-				Expect(err).Should(BeNil())
-				Expect(res.StatusCode).Should(Equal(200))
-				str, _ := res.Body.ToString()
-				Expect(str).Should(Equal("Hello"))
 				Expect(got.Header.Get("X-TEST-HEADER")).Should(Equal("TEST"))
 			})
 
