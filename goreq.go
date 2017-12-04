@@ -25,28 +25,28 @@ type itimeout interface {
 	Timeout() bool
 }
 type Request struct {
-	headers           []headerTuple
-	cookies           []*http.Cookie
-	Method            string
-	Uri               string
-	Body              interface{}
-	QueryString       interface{}
-	Timeout           time.Duration
-	ContentType       string
-	Accept            string
-	Host              string
-	UserAgent         string
-	Insecure          bool
-	MaxRedirects      int
-	RedirectHeaders   bool
-	Proxy             string
-	proxyHeaders      []headerTuple
-	Compression       *compression
-	BasicAuthUsername string
-	BasicAuthPassword string
-	CookieJar         http.CookieJar
-	ShowDebug         bool
-	OnBeforeRequest   func(goreq *Request, httpreq *http.Request)
+	headers             []headerTuple
+	cookies             []*http.Cookie
+	Method              string
+	Uri                 string
+	Body                interface{}
+	QueryString         interface{}
+	Timeout             time.Duration
+	ContentType         string
+	Accept              string
+	Host                string
+	UserAgent           string
+	Insecure            bool
+	MaxRedirects        int
+	RedirectHeaders     bool
+	Proxy               string
+	proxyConnectHeaders []headerTuple
+	Compression         *compression
+	BasicAuthUsername   string
+	BasicAuthPassword   string
+	CookieJar           http.CookieJar
+	ShowDebug           bool
+	OnBeforeRequest     func(goreq *Request, httpreq *http.Request)
 }
 
 type compression struct {
@@ -273,15 +273,15 @@ func (r Request) WithCookie(c *http.Cookie) Request {
 	return r
 }
 
-func (r *Request) AddProxyHeader(name string, value string) {
-	if r.proxyHeaders == nil {
-		r.proxyHeaders = []headerTuple{}
+func (r *Request) AddProxyConnectHeader(name string, value string) {
+	if r.proxyConnectHeaders == nil {
+		r.proxyConnectHeaders = []headerTuple{}
 	}
-	r.proxyHeaders = append(r.proxyHeaders, headerTuple{name: name, value: value})
+	r.proxyConnectHeaders = append(r.proxyConnectHeaders, headerTuple{name: name, value: value})
 }
 
-func (r Request) WithProxyHeader(name string, value string) Request {
-	r.AddProxyHeader(name, value)
+func (r Request) WithProxyConnectHeader(name string, value string) Request {
+	r.AddProxyConnectHeader(name, value)
 	return r
 }
 
@@ -310,8 +310,8 @@ func (r Request) Do() (*Response, error) {
 		}
 
 		proxyHeader := make(http.Header)
-		if r.proxyHeaders != nil {
-			for _, header := range r.proxyHeaders {
+		if r.proxyConnectHeaders != nil {
+			for _, header := range r.proxyConnectHeaders {
 				proxyHeader.Add(header.name, header.value)
 			}
 		}

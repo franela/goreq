@@ -1139,7 +1139,7 @@ func TestRequest(t *testing.T) {
 				res, err := Request{Uri: ts.URL,
 					Proxy:    proxy.URL,
 					Insecure: true,
-				}.WithProxyHeader("X-TEST-HEADER", "TEST").Do()
+				}.WithProxyConnectHeader("X-TEST-HEADER", "TEST").Do()
 				defer res.Body.Close()
 
 				var got *http.Request
