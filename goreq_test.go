@@ -1072,44 +1072,6 @@ func TestRequest(t *testing.T) {
 			createServer := func() {
 				proxy = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					proxyCh <- r
-					// Implement an entire CONNECT proxy
-					if r.Method == "CONNECT" {
-						// hijacker, ok := w.(http.Hijacker)
-						// if !ok {
-						// 	t.Errorf("hijack not allowed")
-						// 	return
-						// }
-						// clientConn, _, err := hijacker.Hijack()
-						// if err != nil {
-						// 	t.Errorf("hijacking failed")
-						// 	return
-						// }
-
-						// res := &http.Response{
-						// 	StatusCode: http.StatusOK,
-						// 	Proto:      "HTTP/1.1",
-						// 	ProtoMajor: 1,
-						// 	ProtoMinor: 1,
-						// 	Header:     r.Header,
-						// }
-
-						// targetConn, err := net.Dial("tcp", r.URL.Host)
-						// if err != nil {
-						// 	t.Errorf("net.Dial(%q) failed: %v", r.URL.Host, err)
-						// 	return
-						// }
-
-						// if err := res.Write(clientConn); err != nil {
-						// 	t.Errorf("Writing 200 OK failed: %v", err)
-						// 	return
-						// }
-
-						// go io.Copy(targetConn, clientConn)
-						// go func() {
-						// 	io.Copy(clientConn, targetConn)
-						// 	targetConn.Close()
-						// }()
-					}
 				}))
 			}
 
