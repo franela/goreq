@@ -231,6 +231,11 @@ func prepareRequestBody(b interface{}) (io.Reader, error) {
 		return bytes.NewReader(b.([]byte)), nil
 	case nil:
 		return nil, nil
+	case MultipartForm:
+		mp := b.(MultipartForm)
+		return mp.ToReader()
+	case *MultipartForm:
+		return b.(*MultipartForm).ToReader()
 	default:
 		// try to jsonify it
 		j, err := json.Marshal(b)
