@@ -1,17 +1,20 @@
 package goreq
 
 import (
+	"bytes"
 	"compress/gzip"
 	"compress/zlib"
 	"encoding/base64"
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"math"
 	"net/http"
 	"net/http/cookiejar"
 	"net/http/httptest"
 	"net/url"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -966,6 +969,49 @@ func TestRequest(t *testing.T) {
 			})
 		})
 
+		g.Describe("Debug", func() {
+			var ts *httptest.Server
+			var mock = &stderrMock{}
+
+			g.Before(func() {
+				ts = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					w.WriteHeader(200)
+					fmt.Fprintf(w, "Hello")
+				}))
+			})
+
+			g.After(func() {
+				ts.Close()
+			})
+
+			g.It("Should print debug messsage GET", func() {
+				mock.Set()
+				req := Request{Uri: ts.URL + "/foo", Method: "GET", ShowDebug: true}
+				res, err := req.Do()
+
+				output := mock.Get()
+				Expect(err).ShouldNot(HaveOccurred())
+				Expect(res.StatusCode).Should(Equal(200))
+				Expect(output).Should(ContainSubstring("GET /foo HTTP/1.1"))
+				Expect(output).Should(ContainSubstring("HTTP/1.1 200 OK"))
+				Expect(output).Should(ContainSubstring("Hello"))
+			})
+
+			g.It("Should print debug messsage POST", func() {
+				mock.Set()
+				req := Request{Uri: ts.URL + "/foo/bar", Method: "POST", Body: `{"foo" "bar"}`, ShowDebug: true}
+				res, err := req.Do()
+
+				output := mock.Get()
+				Expect(err).ShouldNot(HaveOccurred())
+				Expect(res.StatusCode).Should(Equal(200))
+				Expect(output).Should(ContainSubstring("POST /foo/bar HTTP/1.1"))
+				Expect(output).Should(ContainSubstring(`{"foo" "bar"}`))
+				Expect(output).Should(ContainSubstring("HTTP/1.1 200 OK"))
+				Expect(output).Should(ContainSubstring("Hello"))
+			})
+		})
+
 		g.Describe("Errors", func() {
 			var ts *httptest.Server
 
@@ -1213,4 +1259,38 @@ func Test_paramParse(t *testing.T) {
 		})
 	})
 
+}
+
+// stderrMock is struct for testing stderr output
+type stderrMock struct {
+	stderr *os.File
+	writer *os.File
+	output chan string
+}
+
+// Set sets dummy writer to stderr
+func (m *stderrMock) Set() {
+	backupErr := os.Stderr
+	r, w, _ := os.Pipe()
+
+	os.Stderr = w
+	log.SetOutput(w)
+	opChan := make(chan string)
+	go func() {
+		var buf bytes.Buffer
+		io.Copy(&buf, r)
+		opChan <- buf.String()
+	}()
+
+	m.stderr = backupErr
+	m.writer = w
+	m.output = opChan
+}
+
+// Get gets output from dummy writer and close it
+func (m *stderrMock) Get() string {
+	m.writer.Close()
+	os.Stderr = m.stderr
+	log.SetOutput(os.Stderr)
+	return <-m.output
 }
