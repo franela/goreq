@@ -231,6 +231,17 @@ func TestRequest(t *testing.T) {
 					Expect(res.StatusCode).Should(Equal(200))
 				})
 
+				g.It("should support send url.Values body for post", func(){
+					res, err := Request{
+						Uri: ts.URL + "/getbody",
+						Body: valuesQuery
+					}.Do()
+					Expect(err).Should(BeNil())
+					str, _ := res.Body.ToString()
+					Expect(str).Should(Equal("friend=jonas&friend=peter&name=marcos"))
+					Expect(res.StatusCode).Should(Equal(200))
+				})
+
 				g.It("Should support sending string body", func() {
 					res, err := Request{Uri: ts.URL + "/getbody", Body: "foo"}.Do()
 
