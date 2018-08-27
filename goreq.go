@@ -231,7 +231,6 @@ func prepareRequestBody(b interface{}) (reader io.Reader, contentType string, er
 		return bytes.NewReader(b.([]byte)), "", nil
 	case url.Values:
 		//treat as form request
-		log.Printf("%#v", b)
 		reader = strings.NewReader(b.(url.Values).Encode())
 		contentType = "application/x-www-form-urlencoded; charset=UTF-8"
 		return
