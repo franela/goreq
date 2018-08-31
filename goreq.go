@@ -218,26 +218,31 @@ func paramParseStruct(v *url.Values, query interface{}) error {
 	return nil
 }
 
-func prepareRequestBody(b interface{}) (io.Reader, error) {
+func prepareRequestBody(b interface{}) (reader io.Reader, contentType string, err error) {
 	switch b.(type) {
 	case string:
 		// treat is as text
-		return strings.NewReader(b.(string)), nil
+		return strings.NewReader(b.(string)), "", nil
 	case io.Reader:
 		// treat is as text
-		return b.(io.Reader), nil
+		return b.(io.Reader), "", nil
 	case []byte:
 		//treat as byte array
-		return bytes.NewReader(b.([]byte)), nil
+		return bytes.NewReader(b.([]byte)), "", nil
+	case url.Values:
+		//treat as form request
+		reader = strings.NewReader(b.(url.Values).Encode())
+		contentType = "application/x-www-form-urlencoded; charset=UTF-8"
+		return
 	case nil:
-		return nil, nil
+		return nil, "", nil
 	default:
 		// try to jsonify it
 		j, err := json.Marshal(b)
 		if err == nil {
-			return bytes.NewReader(j), nil
+			return bytes.NewReader(j), "application/json; charset=UTF-8", nil
 		}
-		return nil, err
+		return nil, "", err
 	}
 }
 
@@ -444,11 +449,13 @@ func (r Request) addHeaders(headersMap http.Header) {
 }
 
 func (r Request) NewRequest() (*http.Request, error) {
-
-	b, e := prepareRequestBody(r.Body)
+	b, ct, e := prepareRequestBody(r.Body)
 	if e != nil {
 		// there was a problem marshaling the body
 		return nil, &Error{Err: e}
+	}
+	if r.ContentType == "" {
+		r.ContentType = ct
 	}
 
 	if r.QueryString != nil {
@@ -456,7 +463,9 @@ func (r Request) NewRequest() (*http.Request, error) {
 		if e != nil {
 			return nil, &Error{Err: e}
 		}
-		r.Uri = r.Uri + "?" + param
+		if param != "" {
+			r.Uri = r.Uri + "?" + param
+		}
 	}
 
 	var bodyReader io.Reader
