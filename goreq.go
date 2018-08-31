@@ -463,7 +463,9 @@ func (r Request) NewRequest() (*http.Request, error) {
 		if e != nil {
 			return nil, &Error{Err: e}
 		}
-		r.Uri = r.Uri + "?" + param
+		if param != "" {
+			r.Uri = r.Uri + "?" + param
+		}
 	}
 
 	var bodyReader io.Reader
